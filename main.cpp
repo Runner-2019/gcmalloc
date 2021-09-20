@@ -9,10 +9,12 @@
   --------------------------------------
 */
 #include <iostream>
+#include "concurrency.h"
 using namespace std;
 int main(){
     cout<<"hello world"<<endl;
-
-
+    Tsd tsd;
+    tsd.set((int*)(-1));
+    cout<<(int*)(tsd.get())<<endl;
     return 0;
 }
