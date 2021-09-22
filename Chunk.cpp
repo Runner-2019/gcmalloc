@@ -38,7 +38,7 @@ bool Chunk::is_mmaped() {
     return size & IS_MMAPPED;
 }
 
-bool Chunk::is_non_main_arena() {
+bool Chunk::is_in_non_main_arena() {
     return size & NON_MAIN_ARENA;
 }
 
@@ -54,8 +54,8 @@ void Chunk::set_head(size_t sizeAndBits) {
     size = sizeAndBits;
 }
 
-void Chunk::set_footer() {
-    nxt_chunk()->prev_size = get_size();
+void Chunk::set_foot(size_t sz) {
+    nxt_chunk()->prev_size = sz;
 }
 
 /* This chunk's inuse information is stored in next chunk */
@@ -71,38 +71,37 @@ void Chunk::clear_inuse() {
     nxt_chunk()->size &= ~PREV_INUSE;
 }
 
+void Chunk::unlink(mChunkPtr bck, mChunkPtr fwd) {
+    /* deal with small bins */
+    fwd = fd;
+    bck = bk;
+    assert(fd->bk == this && bk->fd == this);
+    fwd->bk = bk;
+    bck->fd = fd;
 
-bool Chunk::in_smallbin_range() {
-    return get_size() < SMALLBIN_MAX_SIZE;
+    /* deal with large bin */
+    if (!(in_smallbin_range(get_size())) && fd_nextsize != nullptr) {
+        assert(fd_nextsize->bk_nextsize == this);
+        assert(bk_nextsize->fd_nextsize == this);
+        if (fwd->fd_nextsize == nullptr) {
+            if (fd_nextsize == this)
+                fwd->fd_nextsize = fwd->bk_nextsize = fwd;
+            else {
+                fwd->fd_nextsize = fd_nextsize;
+                fwd->bk_nextsize = bk_nextsize;
+                fd_nextsize->bk_nextsize = fwd;
+                bk_nextsize->fd_nextsize = fwd;
+            }
+        } else {
+            fd_nextsize->bk_nextsize = fwd->bk_nextsize;
+            bk_nextsize->fd_nextsize = fwd->fd_nextsize;
+        }
+    }
 }
 
-size_t Chunk::smallbin_idx() {
-    return get_size() >> 4;
+mHeapPtr Chunk::belonged_heap() {
+    return ((mHeapPtr)((unsigned long)(this_chunk()) & ~(HEAP_MAX_SIZE-1)));
 }
-
-size_t Chunk::largebin_idx() {
-    unsigned long sz = get_size();
-    size_t ret = 0;
-    if (sz >> 6 <= 48)
-        ret += 48 + (sz >> 6);
-    if (sz >> 9 <= 20)
-        ret += 91 + (sz >> 9);
-    if (sz >> 12 <= 10)
-        ret += 110 + (sz >> 12);
-    if (sz >> 15 <= 4)
-        ret += 119 + (sz >> 15);
-    if (sz >> 18 <= 2)
-        ret += 124 + (sz >> 18);
-    else
-        ret += 126;
-    return ret;
-}
-
-size_t Chunk::bin_idx() {
-    return in_smallbin_range() ? smallbin_idx() : largebin_idx();
-}
-
-
 
 
 

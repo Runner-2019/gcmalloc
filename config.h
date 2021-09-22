@@ -12,6 +12,8 @@
 #define GCMALLOC_CONFIG_H
 #include <cstddef>
 
+#define GCMALLOC_DEBUG
+
 // only support 64-bit
 const int SIZE_SZ = sizeof(size_t); // 8B
 const int GCMALLOC_ALIGNMENT = 2 * SIZE_SZ; // 16B
@@ -29,28 +31,42 @@ const int MINSIZE = (CHUNK_MIN_SIZE + GCMALLOC_ALIGN_MASK) & ~(GCMALLOC_ALIGN_MA
 
 /* Bins */
 const int NBINS = 128;
-const int BINMAPSIZE = 1;
 const int NFASTBINS = 80;
 const int NSMALLBINS = 64;
-const int SMALLBIN_WIDTH  = GCMALLOC_ALIGNMENT;
+const int SMALLBIN_WIDTH = GCMALLOC_ALIGNMENT;
 const int SMALLBIN_MAX_SIZE = NSMALLBINS * SMALLBIN_WIDTH;
 const int DEFAULT_MXFAST = 64;
 const int HAVE_FASTCHUNKS_BIT = 0x1;
-const int NONCONTIGUOUS_BIT  = 0x2;
+const int NONCONTIGUOUS_BIT = 0x2;
+const int FASTBIN_CONSOLIDATION_THRESHOLD = 65536UL;
+const int BINMAPSHIFT = 5;
+const int BITSPERMAP = 1U << BINMAPSHIFT;
+const int BINMAPSIZE = NBINS / BITSPERMAP;
 
-
-
-/* gcmalloc parameters */
-const int DEFAULT_TOP_PAD = 1;
-const int DEFAULT_MMAP_MAX = 1;
-const int DEFAULT_MMAP_THRESHOLD = 1;
-const int DEFAULT_TRIM_THRESHOLD = 1;
+/*
+                        gcmalloc parameters
+    Symbol            param #   default    allowed param values
+    M_MXFAST          1         64         0-80  (0 disables fastbins)
+    M_TRIM_THRESHOLD -1         128*1024   any   (-1U disables trimming)
+    M_TOP_PAD        -2         0          any
+    M_MMAP_THRESHOLD -3         128*1024   any   (or 0 if no MMAP support)
+    M_MMAP_MAX       -4         65536      any   (0 disables use of mmap)
+ */
+const int DEFAULT_TOP_PAD = 0;
+const int DEFAULT_MMAP_MAX = 65536;
+const int DEFAULT_MMAP_THRESHOLD = 128 * 1024;
+const int DEFAULT_MMAP_THRESHOLD_MAX = 128 * 1024;
+const int DEFAULT_TRIM_THRESHOLD = 128 * 1024;
 const int DEFAULT_PAGESIZE = 4096; // 32-bit is 4096B
 
 /* mmap */
 #ifndef MAP_FAILED
 #define MAP_FAILED (void*)(-1);
 #endif
+const int MMAP_AS_SBRK_SIZE = 1024 * 1024;
+
+/* Debug */
+const  int check_action = 3;
 
 
 #endif //GCMALLOC_CONFIG_H

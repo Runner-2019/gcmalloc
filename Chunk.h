@@ -14,8 +14,23 @@
 #include <cstddef>
 #include <cassert>
 
+/*
+    Forward declaration
+    Chunk - Chunk belongs to all.    Manage the real memory allocated to users or freed.
+    Heap  - Heap belongs to Arena.   Manage allocated and freed Chunk.
+    Bins  - Bins belongs to Arena.   Manage the freed chunk.
+    Arena - Arena belongs to thread. Manage all。
+*/
 class Chunk;
+class Heap;
+class Bin;
+struct Arena;
 using mChunkPtr = Chunk *;
+using mHeapPtr = Heap *;
+using mBinPtr = mChunkPtr;
+using mFastbinPtr = mChunkPtr;
+using mArenaPtr = Arena *;
+
 /* --------------------------------- Chunk ---------------------------------
 1. Boundary tag:
     Chunks of memory are maintained using a `boundary tag' method.
@@ -76,7 +91,7 @@ inline mChunkPtr mem2chunk(void *mem) {
 
 /* treat the space(begins at p + offset) as a Chunk*/
 inline mChunkPtr offset2Chunk(void *p, size_t offset) {
-    return (mChunkPtr) ( (char*)p + offset);
+    return (mChunkPtr) ((char *) p + offset);
 }
 //
 //size_t inuse_bit_at_offset(void *p, size_t sz) {
@@ -104,6 +119,8 @@ public:
 
     bool is_aligned();
 
+    mHeapPtr belonged_heap();
+
 public:
     /*--------------- Some size operations ---------------*/
     /* Get size, ignoring use bits */
@@ -112,7 +129,7 @@ public:
     /* Set size at head */
     void set_head_size(size_t sz); // not
     void set_head(size_t sizeAndBits); // yes
-    void set_footer();
+    void set_foot(size_t sz);
 
 
 public:
@@ -125,7 +142,7 @@ public:
     /*--------------- Physical bits operations ---------------*/
     bool prev_inuse();
     bool is_mmaped();
-    bool is_non_main_arena();
+    bool is_in_non_main_arena();
 
     /* This chunk's inuse information is stored in next chunk */
     bool inuse();
@@ -133,14 +150,31 @@ public:
     void clear_inuse();
 
 public:
-    /* -----  some ops for bins ---*/
-    bool in_smallbin_range();
-    size_t smallbin_idx();
-    size_t largebin_idx();
-    size_t bin_idx();
-
+    void unlink(mChunkPtr bk, mChunkPtr fd);
 
 };
+
+
+/* -----  some ops for bins ---*/
+inline bool in_smallbin_range(size_t sz) { return sz < SMALLBIN_MAX_SIZE; }
+inline size_t smallbin_idx(size_t sz) { return sz >> 4; }
+inline size_t largebin_idx(size_t sz) {
+    size_t ret = 0;
+    if (sz >> 6 <= 48)
+        ret += 48 + (sz >> 6);
+    if (sz >> 9 <= 20)
+        ret += 91 + (sz >> 9);
+    if (sz >> 12 <= 10)
+        ret += 110 + (sz >> 12);
+    if (sz >> 15 <= 4)
+        ret += 119 + (sz >> 15);
+    if (sz >> 18 <= 2)
+        ret += 124 + (sz >> 18);
+    else
+        ret += 126;
+    return ret;
+}
+inline size_t bin_idx(size_t sz) { return in_smallbin_range(sz) ? smallbin_idx(sz) : largebin_idx(sz); }
 
 
 #endif //GCMALLOC_CHUNK_H
