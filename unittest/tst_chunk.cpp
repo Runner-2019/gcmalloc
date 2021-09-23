@@ -51,5 +51,6 @@ TEST(TST_CHUNKS, tst_smallbin_idx) {
 
 int main(int argc, char* argv[]){
     testing::InitGoogleTest(&argc, argv);
+    1 + 2;
     return RUN_ALL_TESTS();
 }
