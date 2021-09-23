@@ -8,13 +8,14 @@
   @author: xiaomingZhang2020@outlook.com
   --------------------------------------
 */
-#include "Heap.h"
+#include "include/Heap.h"
 
 
-mHeapPtr Heap::create(size_t sz, size_t top_pad) {
+mHeapPtr new_heap(size_t sz, size_t top_pad) {
     size_t page_mask = DEFAULT_PAGESIZE - 1;
     char *p1, *p2;
     unsigned long ul;
+    mHeapPtr heap;
 
     if (sz + top_pad < HEAP_MIN_SIZE)
         sz = HEAP_MIN_SIZE;

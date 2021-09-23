@@ -8,7 +8,7 @@
   @author: xiaomingZhang2020@outlook.com
   --------------------------------------
 */
-#include "Bin.h"
+#include "include/Bin.h"
 
 /* addressing -- note that bin_at(0) does not exist */
 mBinPtr Bins::bin_at(size_t i) {
@@ -29,7 +29,7 @@ mChunkPtr Bins::chunk_at_last(mBinPtr bin) {
 }
 
 
-size_t FastBin::index(size_t sz) {
+size_t FastBins::index(size_t sz) {
     return (sz >> 3) - 2;
 }
 

@@ -9,13 +9,11 @@
   --------------------------------------
 */
 #include <iostream>
-#include "concurrency.h"
+//#include "gcmalloc.h"
 using namespace std;
 
 int main(){
-    cout<<"hello world"<<endl;
-    Tsd tsd;
-    tsd.set((int*)(-1));
-    cout<<(int*)(tsd.get())<<endl;
+//    gcmalloc gc;
+    cout<<sizeof(bool)<<endl;
     return 0;
 }

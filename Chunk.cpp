@@ -8,7 +8,7 @@
   @author: xiaomingZhang2020@outlook.com
   --------------------------------------
 */
-#include "Chunk.h"
+#include "include/Chunk.h"
 
 char *Chunk::this_chunk() {
     return (char *) (this);
@@ -34,7 +34,7 @@ bool Chunk::prev_inuse() {
     return size & PREV_INUSE;
 }
 
-bool Chunk::is_mmaped() {
+bool Chunk::is_mmapped() {
     return size & IS_MMAPPED;
 }
 
