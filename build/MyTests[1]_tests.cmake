@@ -1,7 +1,0 @@
-add_test( MyTest.Sum /Users/zhangnaigang/CLionProjects/gcmalloc/build/MyTests [==[--gtest_filter=MyTest.Sum]==] --gtest_also_run_disabled_tests)
-set_tests_properties( MyTest.Sum PROPERTIES WORKING_DIRECTORY /Users/zhangnaigang/CLionProjects/gcmalloc/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test( MyTest.test_even /Users/zhangnaigang/CLionProjects/gcmalloc/build/MyTests [==[--gtest_filter=MyTest.test_even]==] --gtest_also_run_disabled_tests)
-set_tests_properties( MyTest.test_even PROPERTIES WORKING_DIRECTORY /Users/zhangnaigang/CLionProjects/gcmalloc/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test( MyTest.test01 /Users/zhangnaigang/CLionProjects/gcmalloc/build/MyTests [==[--gtest_filter=MyTest.test01]==] --gtest_also_run_disabled_tests)
-set_tests_properties( MyTest.test01 PROPERTIES WORKING_DIRECTORY /Users/zhangnaigang/CLionProjects/gcmalloc/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set( MyTests_TESTS MyTest.Sum MyTest.test_even MyTest.test01)
