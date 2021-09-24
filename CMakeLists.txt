@@ -15,10 +15,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 enable_testing()
-aux_source_directory(unittest TEST_SRC_LIST)
-add_executable(UnitTests ${TEST_SRC_LIST} Chunk.cpp)
-target_link_libraries(UnitTests gtest)
 include(GoogleTest)
-#gtest_discover_tests(MyTests)
-add_test(Test UnitTests)
+aux_source_directory(TST_CHUNK TEST_SRC_LIST)
+
+# tst_chunk
+add_executable(test_chunk unittest/tst_chunk.cpp Chunk.cpp)
+target_link_libraries(test_chunk gtest)
+add_test(Test test_chunk)
+
+# gtest: tst_heap
+add_executable(test_heap unittest/tst_heap.cpp Heap.cpp)
+target_link_libraries(test_heap gtest)
+add_test(Test test_heap)
+
 

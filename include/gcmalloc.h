@@ -17,18 +17,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#ifndef MAP_ANONYMOUS
-static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
-inline void* MMAP(void* addr, size_t size, int prot, int flags){
-    if(dev_zero_fd < 0)
-        dev_zero_fd = open("/dev/zero",O_RDWR);
-    return mmap(addr,size,prot, flags,dev_zero_fd,0);
-}
-#else
-inline void *MMAP(void *addr, size_t size, int prot, int flags) {
-    return mmap(addr, size, prot, flags | MAP_ANONYMOUS, -1, 0);
-}
-#endif
+
 
 inline void MALLOC_FAILURE_ACTION() {
     errno = ENOMEM;

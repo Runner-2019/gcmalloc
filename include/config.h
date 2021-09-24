@@ -61,9 +61,6 @@ const int DEFAULT_TRIM_THRESHOLD = 128 * 1024;
 const int DEFAULT_PAGESIZE = 4096; // 32-bit is 4096B
 
 /* mmap */
-#ifndef MAP_FAILED
-#define MAP_FAILED (void*)(-1);
-#endif
 const int MMAP_AS_SBRK_SIZE = 1024 * 1024;
 
 /* Debug */

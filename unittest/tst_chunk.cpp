@@ -18,8 +18,7 @@
 using namespace std;
 using ::testing::Test;
 
-class TST_CHUNK : public ::testing::Test {
-};
+class TST_CHUNK : public ::testing::Test {};
 
 
 class Environment : public ::testing::Environment {
