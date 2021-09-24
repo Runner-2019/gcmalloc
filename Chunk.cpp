@@ -10,19 +10,19 @@
 */
 #include "include/Chunk.h"
 
-char *Chunk::this_chunk() {
+char *Chunk::this_chunk() const {
     return (char *) (this);
 }
 
-mChunkPtr Chunk::nxt_chunk() {
+mChunkPtr Chunk::nxt_chunk() const {
     return offset2Chunk(this_chunk(), get_size());
 }
 
-mChunkPtr Chunk::pre_chunk() {
+mChunkPtr Chunk::pre_chunk() const {
     return (mChunkPtr) (this_chunk() - prev_size);
 }
 
-void *Chunk::chunk2mem() {
+void *Chunk::chunk2mem() const {
     return (void *) (this_chunk() + 2 * SIZE_SZ);
 }
 
@@ -30,16 +30,21 @@ bool Chunk::is_aligned() {
     return true;
 }
 
-bool Chunk::prev_inuse() {
+bool Chunk::prev_inuse() const {
     return size & PREV_INUSE;
 }
 
-bool Chunk::is_mmapped() {
+bool Chunk::is_mmapped() const {
     return size & IS_MMAPPED;
 }
 
-bool Chunk::is_in_non_main_arena() {
+bool Chunk::is_in_non_main_arena() const {
     return size & NON_MAIN_ARENA;
+}
+
+
+bool Chunk::is_marked() const {
+    return size & GC_MARKED;
 }
 
 size_t Chunk::get_size() const {
@@ -56,6 +61,23 @@ void Chunk::set_head(size_t sizeAndBits) {
 
 void Chunk::set_foot(size_t sz) {
     nxt_chunk()->prev_size = sz;
+}
+
+void Chunk::set_prev_size(size_t sz) {
+    prev_size = sz;
+}
+
+size_t Chunk::get_prev_size() const {
+    return prev_size & ~allBits;
+}
+
+
+size_t Chunk::get_size_field() const {
+    return size;
+}
+
+size_t Chunk::get_prev_size_field() const {
+    return prev_size;
 }
 
 /* This chunk's inuse information is stored in next chunk */
@@ -100,8 +122,11 @@ void Chunk::unlink(mChunkPtr bck, mChunkPtr fwd) {
 }
 
 mHeapPtr Chunk::belonged_heap() {
-    return ((mHeapPtr)((unsigned long)(this_chunk()) & ~(HEAP_MAX_SIZE-1)));
+    return ((mHeapPtr) ((unsigned long) (this_chunk()) & ~(HEAP_MAX_SIZE - 1)));
 }
+
+
+
 
 
 

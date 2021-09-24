@@ -26,7 +26,7 @@ class Heap;
 class Bins;
 class FastBins;
 class BinMap;
-struct Arena;
+class Arena;
 using mChunkPtr = Chunk *;
 using mHeapPtr = Heap *;
 using mBinPtr = mChunkPtr;
@@ -53,37 +53,34 @@ inline mChunkPtr offset2Chunk(void *p, size_t offset) {
 
 
 class Chunk {
-public:
-    /* conversion from malloc headers to user pointers, and back */
-    void *chunk2mem();
-
-    bool is_aligned();
-    mHeapPtr belonged_heap();
     friend class Bins;
-//    friend class ;
     friend class gcmalloc;
 public:
     /*--------------- Some size operations ---------------*/
     /* Get size, ignoring use bits */
     [[nodiscard]] size_t get_size() const;
+    [[nodiscard]] size_t get_prev_size() const;
+    [[nodiscard]] size_t get_size_field() const;
+    [[nodiscard]] size_t get_prev_size_field() const;
 
-    /* Set size at head */
-    void set_head_size(size_t sz); // not
-    void set_head(size_t sizeAndBits); // yes
+    /* foot is next chunk's prev_size */
+    void set_head(size_t sizeAndBits);
     void set_foot(size_t sz);
-
+    void set_head_size(size_t sz);
+    void set_prev_size(size_t sz);
 
 public:
     /*--------------- Physical chunk operations ---------------*/
-    char *this_chunk();
-    mChunkPtr nxt_chunk();
-    mChunkPtr pre_chunk();
+    [[nodiscard]] char *this_chunk() const;
+    [[nodiscard]] mChunkPtr nxt_chunk() const;
+    [[nodiscard]] mChunkPtr pre_chunk() const;
 
 public:
     /*--------------- Physical bits operations ---------------*/
-    bool prev_inuse();
-    bool is_mmapped();
-    bool is_in_non_main_arena();
+    [[nodiscard]] bool prev_inuse() const;
+    [[nodiscard]] bool is_mmapped() const;
+    [[nodiscard]] bool is_in_non_main_arena() const;
+    [[nodiscard]] bool is_marked() const;
 
     /* This chunk's inuse information is stored in next chunk */
     bool inuse();
@@ -91,8 +88,12 @@ public:
     void clear_inuse();
 
 public:
-    void unlink(mChunkPtr bk, mChunkPtr fd);
+    /* conversion from malloc headers to user pointers, and back */
+    [[nodiscard]] void *chunk2mem() const;
 
+    bool is_aligned();
+    mHeapPtr belonged_heap();
+    void unlink(mChunkPtr bck, mChunkPtr fwd);
 
 private:
     size_t prev_size;   /* Size of previous chunk (if free).  */
@@ -111,10 +112,10 @@ inline bool in_smallbin_range(size_t sz) { return sz < SMALL_BINS_MAX_SIZE; }
 inline size_t smallbin_idx(size_t sz) /* logic index */ { return sz >> 4; }
 inline size_t largebin_idx(size_t sz) {
     size_t ret = (((sz >> 6) <= 48) ? 48 + (sz >> 6) : \
-     ((sz >> 9) <= 20) ? 91 + (sz >> 9) : \
-     ((sz >> 12) <= 10) ? 110 + (sz >> 12) : \
-     ((sz >> 15) <= 4) ? 119 + (sz >> 15) : \
-     ((sz >> 18) <= 2) ? 124 + (sz >> 18) : \
+        ((sz >> 9) <= 20) ? 91 + (sz >> 9) : \
+        ((sz >> 12) <= 10) ? 110 + (sz >> 12) : \
+        ((sz >> 15) <= 4) ? 119 + (sz >> 15) : \
+        ((sz >> 18) <= 2) ? 124 + (sz >> 18) : \
                                             126);
     return ret;
 }
