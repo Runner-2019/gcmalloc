@@ -12,7 +12,7 @@
 #define GCMALLOC_ARENA_H
 #include <sys/mman.h>
 #include "config.h"
-#include "../../include/concurrency.h"
+#include "concurrency.h"
 #include "Chunk.h"
 #include "Bin.h"
 #include "Heap.h"

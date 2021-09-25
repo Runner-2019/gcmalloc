@@ -11,23 +11,19 @@
 #ifndef GCMALLOC_GCMALLOC_H
 #define GCMALLOC_GCMALLOC_H
 #include "Arena.h"
-#include "config.h"
+#include "concurrency.h"
 #include <functional>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <unistd.h>
-
 
 
 inline void MALLOC_FAILURE_ACTION() {
     errno = ENOMEM;
 }
 
-
-
 /* function pointer */
 using mallocFuncType = std::function<void *(size_t sz)>;
-using freeFuncType = std::function<void(void*)>;
+using freeFuncType = std::function<void(void *)>;
 
 
 struct gcmallocPar {
@@ -64,7 +60,7 @@ struct gcmallocPar {
 class gcmalloc {
 public:
     void *malloc(size_t bytes);
-    void free(void* mem);
+    void free(void *mem);
 
 #ifdef GCMALLOC_DEBUG
 private:
@@ -86,8 +82,8 @@ private:
     void check_malloc_state(mArenaPtr ap);
 
     static int perturb_byte;
-    void alloc_perturb(void* p, size_t n);
-    void free_perturb(void* p, size_t n);
+    void alloc_perturb(void *p, size_t n);
+    void free_perturb(void *p, size_t n);
 
 
 #endif
@@ -111,9 +107,9 @@ private:
     /* Create a new arena with initial size "size".  */
     mArenaPtr createArena(size_t sz);
     void *_int_malloc(mArenaPtr ap, size_t sz);
-    void _int_free(mArenaPtr ap, void* mem);
+    void _int_free(mArenaPtr ap, void *mem);
     void malloc_consolidate(mArenaPtr ap);
-    void malloc_printerr(int action, const char* str, void* ptr);
+    void malloc_printerr(int action, const char *str, void *ptr);
 
 private:
     /* ----------- Routines dealing with system allocation -------------- */
@@ -129,13 +125,12 @@ private:
     freeFuncType free_hook;
     freeFuncType save_free_hook;
 
+public:
     static Arena main_arena;
 
     /* Support thread */
     static Tsd arena_key;
     static Mutex list_lock;
-
-
 };
 
 #endif //GCMALLOC_GCMALLOC_H

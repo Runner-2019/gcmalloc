@@ -4,8 +4,9 @@ project(gcmalloc)
 
 
 # main
+include_directories(include)
 aux_source_directory(. SRC_LIST)
-add_executable(gcmalloc ${SRC_LIST})
+add_executable(gcmalloc ${SRC_LIST} )
 
 # gtest
 include(FetchContent)
@@ -16,7 +17,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 include(GoogleTest)
-aux_source_directory(TST_CHUNK TEST_SRC_LIST)
 
 # tst_chunk
 add_executable(test_chunk unittest/tst_chunk.cpp Chunk.cpp)
@@ -36,4 +36,14 @@ add_test(Test test_bin)
 # gtest: tst_arena
 add_executable(test_arena unittest/tst_arena.cpp Arena.cpp Bin.cpp Chunk.cpp Heap.cpp)
 target_link_libraries(test_arena gtest)
-add_test(Test test_bin)
+add_test(Test test_arena)
+
+# gtest: tst_concurrency
+add_executable(test_concurrency include/concurrency.h unittest/tst_concurrency.cpp)
+target_link_libraries(test_concurrency gtest)
+add_test(Test test_concurrency)
+
+# gtest: tst_gcmalloc
+add_executable(test_gcmalloc unittest/tst_gcmalloc.cpp ${SRC_LIST})
+target_link_libraries(test_gcmalloc gtest)
+add_test(Test test_gcmalloc)

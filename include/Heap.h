@@ -33,6 +33,7 @@ mHeapPtr new_heap(size_t sz, size_t top_pad);
 /* heap */
 class Heap {
     friend class Arena;
+    friend class gcmalloc;
 public:
     int grow(size_t sz);
     int shrink(size_t sz);
