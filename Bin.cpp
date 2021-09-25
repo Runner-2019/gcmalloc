@@ -38,36 +38,49 @@ size_t BinMap::idx2block(size_t i) {
 }
 
 size_t BinMap::idx2bit(size_t i) {
-    return ((1U << (i & (1U << BIN_MAP_SHIFT)-1)));
+    return ((1U << (i & (1U << BIN_MAP_SHIFT) - 1)));
 }
 
 void BinMap::mark_bin(size_t i) {
-    binmap[idx2block(i)] |=  idx2bit(i);
+    binmap[idx2block(i)] |= idx2bit(i);
 }
 
 
 void BinMap::unmark_bin(size_t i) {
-    binmap[idx2block(i)] &=  ~idx2bit(i);
+    binmap[idx2block(i)] &= ~idx2bit(i);
 }
 
 
 unsigned int BinMap::get_binmap(size_t i) {
-    return binmap[idx2block(i)] &  idx2bit(i);
+    return binmap[idx2block(i)] & idx2bit(i);
 }
 
-
+/* always insert in the head of list */
 void UsedBin::insert(mChunkPtr p) {
-     auto used_head = get_used_head();
-     p->set_next_alloc(used_head->get_next_alloc());
-     used_head->set_next_alloc(p);
+    auto pre = tail()->get_prev_allocated();
+    p->set_next_allocated(tail());
+    p->set_prev_allocated(pre);
+    pre->set_next_allocated(p);
+    tail()->set_prev_allocated(p);
 }
 
 void UsedBin::remove(mChunkPtr p) {
-    auto pre
+    auto pre = p->get_prev_allocated();
+    auto nxt = p->get_next_allocated();
+    pre->set_next_allocated(nxt);
+    nxt->set_prev_allocated(pre);
 }
 
-mChunkPtr UsedBin::get_used_head() {
-    return __used_head;
+mChunkPtr UsedBin::head() {
+    auto head = (mChunkPtr)m_data;
+    head->set_head(MINSIZE);
+    return (mChunkPtr)m_data;
+}
+
+mChunkPtr UsedBin::tail() {
+    auto tail = (mChunkPtr)(m_data + MINSIZE);
+    tail->set_head(MINSIZE);
+    return tail;
 }
 
 

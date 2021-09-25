@@ -65,7 +65,7 @@ const int DEFAULT_PAGESIZE = 4096; // 32-bit is 4096B
 const int MMAP_AS_SBRK_SIZE = 1024 * 1024;
 
 /* Debug */
-const  int check_action = 3;
+const int check_action = 3;
 
 
 #endif //GCMALLOC_CONFIG_H

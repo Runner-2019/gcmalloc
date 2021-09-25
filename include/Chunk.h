@@ -96,17 +96,16 @@ public:
     mHeapPtr belonged_heap();
     void unlink(mChunkPtr bck, mChunkPtr fwd);
 
-    Chunk():prev_size(0),size(0),fd(nullptr),bk(nullptr),fd_nextsize(nullptr),bk_nextsize(nullptr){
-        set_next_allocated(nullptr);
-    }
+    Chunk() : prev_size(0), size(0), fd(nullptr), bk(nullptr),
+              fd_nextsize(nullptr), bk_nextsize(nullptr) {}
 
 public:
     /* allocated ops */
-    [[nodiscard]] mChunkPtr get_next_allocated()const;
+    [[nodiscard]] mChunkPtr get_next_allocated() const;
     void set_next_allocated(mChunkPtr p);
 
     /* allocated ops */
-    [[nodiscard]] mChunkPtr get_prev_allocated()const;
+    [[nodiscard]] mChunkPtr get_prev_allocated() const;
     void set_prev_allocated(mChunkPtr p);
 
 

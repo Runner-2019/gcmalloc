@@ -14,15 +14,20 @@
 
 
 /* placed the allocated chunk */
-class UsedBin{
+class UsedBin {
 public:
     void insert(mChunkPtr p);
     void remove(mChunkPtr p);
-    mChunkPtr get_used_head();
+    mChunkPtr head();
+    mChunkPtr tail();
 
+    UsedBin() {
+        head()->set_next_allocated(tail());
+        tail()->set_prev_allocated(head());
+    }
 
 private:
-    mChunkPtr __used_head; /* a dummy head */
+    char m_data[MINSIZE * 2]; /* used for dummy head and tail */
 };
 
 
@@ -52,7 +57,7 @@ private:
 class FastBins {
 public:
     size_t index(size_t sz);
-    mBinPtr & operator[](size_t i){
+    mBinPtr &operator[](size_t i) {
         return fastBins[i];
     }
 private:
@@ -78,7 +83,7 @@ public:
     void unmark_bin(size_t i);
     unsigned int get_binmap(size_t i);
 
-    unsigned int& operator[](size_t i){
+    unsigned int &operator[](size_t i) {
         return binmap[i];
     }
 

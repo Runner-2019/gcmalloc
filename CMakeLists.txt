@@ -29,7 +29,7 @@ target_link_libraries(test_heap gtest)
 add_test(Test test_heap)
 
 # gtest: tst_bin
-add_executable(test_bin unittest/tst_bin.cpp Bin.cpp)
+add_executable(test_bin unittest/tst_bin.cpp Bin.cpp Chunk.cpp)
 target_link_libraries(test_bin gtest)
 add_test(Test test_bin)
 

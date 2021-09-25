@@ -18,7 +18,8 @@
 using namespace std;
 using ::testing::Test;
 
-class TST_CHUNK : public ::testing::Test {};
+class TST_CHUNK : public ::testing::Test {
+};
 
 
 class Environment : public ::testing::Environment {
@@ -27,7 +28,7 @@ public:
         cout << "Allocated 200 bytes to test chunk ops.\n";
         p = (char *) mmap(nullptr, 200, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
         if (p == MAP_FAILED) {
-            cout<<strerror(errno)<<endl;
+            cout << strerror(errno) << endl;
         }
     }
 
@@ -121,31 +122,31 @@ TEST(TST_CHUNKS, tst_size_ops) {
 }
 
 
-TEST(TST_CHUNKS,tst_nxt_chunk){
+TEST(TST_CHUNKS, tst_nxt_chunk) {
     auto cp = (mChunkPtr) (envp->p);
-    cp->set_head( 96 | 0);
+    cp->set_head(96 | 0);
     auto nxtp = cp->nxt_chunk();
-    EXPECT_EQ(nxtp->this_chunk(),cp->this_chunk() + 96);
+    EXPECT_EQ(nxtp->this_chunk(), cp->this_chunk() + 96);
 }
 
 
-TEST(TST_CHUNKS,tst_pre_chunk){
+TEST(TST_CHUNKS, tst_pre_chunk) {
     auto cp = (mChunkPtr) ((envp->p) + 96);
-    cp->set_prev_size( 96 | 0);
+    cp->set_prev_size(96 | 0);
     auto prep = cp->pre_chunk();
-    EXPECT_EQ(prep->this_chunk(),cp->this_chunk() - 96);
+    EXPECT_EQ(prep->this_chunk(), cp->this_chunk() - 96);
 }
 
-TEST(TST_CHUNK, tst_set_footer){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_set_footer) {
+    auto cp = (mChunkPtr) (envp->p);
     cp->set_head_size(96);
     auto nxtp = cp->nxt_chunk();
     cp->set_foot(96);
     ASSERT_EQ(96, nxtp->get_prev_size());
 }
 
-TEST(TST_CHUNK, tst_bits_ops){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_bits_ops) {
+    auto cp = (mChunkPtr) (envp->p);
     cp->set_head(0x10000 | PREV_INUSE);
     EXPECT_TRUE(cp->prev_inuse());
 
@@ -160,47 +161,47 @@ TEST(TST_CHUNK, tst_bits_ops){
 
 }
 
-TEST(TST_CHUNK, tst_inuse_ops){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_inuse_ops) {
+    auto cp = (mChunkPtr) (envp->p);
     cp->set_head_size(96);
-    auto nxtp = offset2Chunk(cp,96);
+    auto nxtp = offset2Chunk(cp, 96);
     nxtp->set_prev_size(96);
     nxtp->set_head_size(64);
 
     cp->set_inuse();
     EXPECT_EQ(nxtp->get_size_field(), 65);
     cp->clear_inuse();
-    EXPECT_EQ(nxtp->get_size_field(), 64 );
+    EXPECT_EQ(nxtp->get_size_field(), 64);
     EXPECT_TRUE(!cp->inuse());
 }
 
-TEST(TST_CHUNK, tst_chunk2mem){
-    auto cp = (mChunkPtr)(envp->p);
-    ASSERT_EQ(cp->chunk2mem(),envp->p + 16);
+TEST(TST_CHUNK, tst_chunk2mem) {
+    auto cp = (mChunkPtr) (envp->p);
+    ASSERT_EQ(cp->chunk2mem(), envp->p + 16);
 }
 
-TEST(TST_CHUNK, tst_belonged_heap){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_belonged_heap) {
+    auto cp = (mChunkPtr) (envp->p);
 
 
 }
 
 
-TEST(TST_CHUNK, tst_get_valid_size){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_get_valid_size) {
+    auto cp = (mChunkPtr) (envp->p);
     cp->set_head_size(96);
     ASSERT_EQ(cp->get_valid_size(), 64);
 }
 
-TEST(TST_CHUNK, tst_get_and_set_next){
-    auto cp = (mChunkPtr)(envp->p);
+TEST(TST_CHUNK, tst_get_and_set_next) {
+    auto cp = (mChunkPtr) (envp->p);
     cp->set_head(97);
 
     auto np = cp->nxt_chunk();
     cp->set_head(97);
 
-    cout<<(void*)cp<<endl;
-    cout<<(void*)np<<endl;
+    cout << (void *) cp << endl;
+    cout << (void *) np << endl;
 
     cp->set_next_allocated(np); /**/
     cp->set_prev_allocated(nullptr);
@@ -208,11 +209,14 @@ TEST(TST_CHUNK, tst_get_and_set_next){
     np->set_prev_allocated(cp);
 
     EXPECT_EQ(cp->get_next_allocated(), np);
-    EXPECT_EQ((char*)(cp->get_next_allocated()), envp->p + 96);
+    EXPECT_EQ((char *) (cp->get_next_allocated()), envp->p + 96);
     EXPECT_EQ(np->get_prev_allocated(), cp);
-    EXPECT_EQ((char*)(np->get_prev_allocated()), envp->p );
-}
+    EXPECT_EQ((char *) (np->get_prev_allocated()), envp->p);
 
+    EXPECT_EQ(cp->get_next_allocated()->get_prev_allocated(), cp);
+    EXPECT_EQ(np->get_prev_allocated()->get_next_allocated(), np);
+
+}
 
 
 int main(int argc, char *argv[]) {
