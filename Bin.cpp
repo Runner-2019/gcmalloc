@@ -17,7 +17,7 @@ mBinPtr Bins::bin_at(size_t i) {
 
 /* analog of ++bin */
 mBinPtr Bins::next_bin(mBinPtr bin) {
-    return ((mBinPtr) ((char *) bin + (sizeof(mChunkPtr) << 1)));
+    return ((mBinPtr) ((char *) bin + 16));
 }
 
 mChunkPtr Bins::chunk_at_first(mBinPtr bin) {
@@ -34,11 +34,11 @@ size_t FastBins::index(size_t sz) {
 }
 
 size_t BinMap::idx2block(size_t i) {
-    return i >> BINMAPSHIFT;
+    return i >> BIN_MAP_SHIFT;
 }
 
 size_t BinMap::idx2bit(size_t i) {
-    return ((1U << (i & (1U << BINMAPSHIFT)-1)));
+    return ((1U << (i & (1U << BIN_MAP_SHIFT)-1)));
 }
 
 void BinMap::mark_bin(size_t i) {
@@ -53,6 +53,21 @@ void BinMap::unmark_bin(size_t i) {
 
 unsigned int BinMap::get_binmap(size_t i) {
     return binmap[idx2block(i)] &  idx2bit(i);
+}
+
+
+void UsedBin::insert(mChunkPtr p) {
+     auto used_head = get_used_head();
+     p->set_next_alloc(used_head->get_next_alloc());
+     used_head->set_next_alloc(p);
+}
+
+void UsedBin::remove(mChunkPtr p) {
+    auto pre
+}
+
+mChunkPtr UsedBin::get_used_head() {
+    return __used_head;
 }
 
 

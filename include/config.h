@@ -25,7 +25,8 @@ const int HEAP_MIN_SIZE = 32 * 1024;
 const int HEAP_MAX_SIZE = 1024 * 1024;
 
 /* Chunk */
-const int CHUNK_MIN_SIZE = 7 * SIZE_SZ; /* 56B */
+const int CHUNK_OVER_HEAD = 4 * SIZE_SZ; /* 32B */
+const int CHUNK_MIN_SIZE = 8 * SIZE_SZ; /* 64B */
 const int MINSIZE = (CHUNK_MIN_SIZE + GCMALLOC_ALIGN_MASK) & ~(GCMALLOC_ALIGN_MASK); /* 64B */
 
 

@@ -10,12 +10,25 @@
 */
 #ifndef GCMALLOC_BIN_H
 #define GCMALLOC_BIN_H
-#include "config.h"
 #include "Chunk.h"
 
+
+/* placed the allocated chunk */
+class UsedBin{
+public:
+    void insert(mChunkPtr p);
+    void remove(mChunkPtr p);
+    mChunkPtr get_used_head();
+
+
+private:
+    mChunkPtr __used_head; /* a dummy head */
+};
+
+
 /*
-    Bins has three parts. The first is unsorted bin and the second is small bin
-    and the left is large bin.
+    Bins has three parts.
+    The first is unsorted bin and the second is small bin and the left is large bin.
 */
 
 class Bins {
@@ -27,7 +40,7 @@ public:
 
 private:
     /* Normal bins packed as described above */
-    mBinPtr bins[NBINS * 2 - 2];
+    mBinPtr bins[NUM_BINS * 2 - 2];
 };
 
 /*
@@ -43,16 +56,16 @@ public:
         return fastBins[i];
     }
 private:
-    mBinPtr fastBins[NFASTBINS];
+    mBinPtr fastBins[NUM_FAST_BINS];
 };
 
 
 /*
-  Binmap
+  BinMap
     To help compensate for the large number of bins, a one-level index
-    structure is used for bin-by-bin searching.  `binmap' is a
+    structure is used for bin-by-bin searching. BinMap is a
     bitvector recording whether bins are definitely empty so they can
-    be skipped over during during traversals.  The bits are NOT always
+    be skipped over during traversals.  The bits are NOT always
     cleared as soon as bins are empty, but instead only
     when they are noticed to be empty during traversal in malloc.
 */
@@ -70,9 +83,8 @@ public:
     }
 
 private:
-    unsigned int binmap[BINMAPSIZE];     /* Bitmap of bins */
+    unsigned int binmap[BIN_MAP_SIZE]{0};     /* Bitmap of bins */
 };
-
 
 
 #endif //GCMALLOC_BIN_H

@@ -62,6 +62,7 @@ public:
     [[nodiscard]] size_t get_prev_size() const;
     [[nodiscard]] size_t get_size_field() const;
     [[nodiscard]] size_t get_prev_size_field() const;
+    [[nodiscard]] size_t get_valid_size() const;
 
     /* foot is next chunk's prev_size */
     void set_head(size_t sizeAndBits);
@@ -95,16 +96,30 @@ public:
     mHeapPtr belonged_heap();
     void unlink(mChunkPtr bck, mChunkPtr fwd);
 
+    Chunk():prev_size(0),size(0),fd(nullptr),bk(nullptr),fd_nextsize(nullptr),bk_nextsize(nullptr){
+        set_next_allocated(nullptr);
+    }
+
+public:
+    /* allocated ops */
+    [[nodiscard]] mChunkPtr get_next_allocated()const;
+    void set_next_allocated(mChunkPtr p);
+
+    /* allocated ops */
+    [[nodiscard]] mChunkPtr get_prev_allocated()const;
+    void set_prev_allocated(mChunkPtr p);
+
+
 private:
     size_t prev_size;   /* Size of previous chunk (if free).  */
     size_t size;        /* Size in bytes, including overhead. */
 
-    Chunk *fd;
-    Chunk *bk;
+    mChunkPtr fd;
+    mChunkPtr bk;
 
     /* Only used for large blocks: pointer to next larger size.  */
-    Chunk *fd_nextsize;
-    Chunk *bk_nextsize;
+    mChunkPtr fd_nextsize;
+    mChunkPtr bk_nextsize;
 };
 
 /* -----  some ops for bins ---*/

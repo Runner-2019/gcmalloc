@@ -186,6 +186,35 @@ TEST(TST_CHUNK, tst_belonged_heap){
 }
 
 
+TEST(TST_CHUNK, tst_get_valid_size){
+    auto cp = (mChunkPtr)(envp->p);
+    cp->set_head_size(96);
+    ASSERT_EQ(cp->get_valid_size(), 64);
+}
+
+TEST(TST_CHUNK, tst_get_and_set_next){
+    auto cp = (mChunkPtr)(envp->p);
+    cp->set_head(97);
+
+    auto np = cp->nxt_chunk();
+    cp->set_head(97);
+
+    cout<<(void*)cp<<endl;
+    cout<<(void*)np<<endl;
+
+    cp->set_next_allocated(np); /**/
+    cp->set_prev_allocated(nullptr);
+    np->set_next_allocated(nullptr);
+    np->set_prev_allocated(cp);
+
+    EXPECT_EQ(cp->get_next_allocated(), np);
+    EXPECT_EQ((char*)(cp->get_next_allocated()), envp->p + 96);
+    EXPECT_EQ(np->get_prev_allocated(), cp);
+    EXPECT_EQ((char*)(np->get_prev_allocated()), envp->p );
+}
+
+
+
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);
     testing::AddGlobalTestEnvironment(envp);

@@ -126,6 +126,30 @@ mHeapPtr Chunk::belonged_heap() {
 }
 
 
+/* next & prev field can not allocated */
+size_t Chunk::get_valid_size() const {
+    return get_size() - 4 * SIZE_SZ;
+}
+
+void Chunk::set_next_allocated(mChunkPtr p) {
+    auto next = (unsigned long *) (this_chunk() + get_valid_size());
+    *next = p ? (unsigned long) p : (unsigned long) 0;
+}
+
+mChunkPtr Chunk::get_next_allocated() const {
+    return (mChunkPtr) (*(unsigned long*)(this_chunk() + get_valid_size()));
+}
+
+
+void Chunk::set_prev_allocated(mChunkPtr p) {
+    auto prev = (unsigned long *) (this_chunk() + get_valid_size() + SIZE_SZ);
+    *prev = p ? (unsigned long) p : (unsigned long) 0;
+}
+
+mChunkPtr Chunk::get_prev_allocated() const {
+    return (mChunkPtr) (*(unsigned long*)(this_chunk() + get_valid_size() + SIZE_SZ));
+}
+
 
 
 
