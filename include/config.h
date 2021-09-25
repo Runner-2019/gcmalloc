@@ -61,6 +61,10 @@ const int DEFAULT_MMAP_THRESHOLD_MAX = 128 * 1024;
 const int DEFAULT_TRIM_THRESHOLD = 128 * 1024;
 const int DEFAULT_PAGESIZE = 4096; // 32-bit is 4096B
 
+/* Arena */
+const bool THIS_IS_MAIN_ARENA = true;
+const bool THIS_IS_NON_MAIN_ARENA = false;
+
 /* mmap */
 const int MMAP_AS_SBRK_SIZE = 1024 * 1024;
 

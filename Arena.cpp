@@ -10,6 +10,66 @@
 */
 #include "include/Arena.h"
 
+/* some bits ops */
+void Arena::set_non_contiguous() {
+    flags |= NON_CONTIGUOUS_BIT;
+}
+
+
+bool Arena::have_fast_chunks() const{
+    return (flags & HAVE_FAST_CHUNKS_BIT) == 0;
+}
+
+void Arena::clear_fast_chunks() {
+    flags |= HAVE_FAST_CHUNKS_BIT;
+}
+
+void Arena::set_fast_chunks() {
+    flags &= ~HAVE_FAST_CHUNKS_BIT;
+}
+
+bool Arena::contiguous() const {
+    return (flags & NON_CONTIGUOUS_BIT) == 0;
+}
+
+bool Arena::non_contiguous() const{
+    return !contiguous();
+}
+
+void Arena::set_contiguous() {
+    flags &= ~NON_CONTIGUOUS_BIT;
+}
+
+/* unsorted chunk ops */
+mChunkPtr Arena::initial_top() {
+    return unsorted_chunks();
+}
+
+mChunkPtr Arena::unsorted_chunks() {
+    return (mChunkPtr) bins.bin_at(1);
+}
+
+
+
+void Arena::init(bool is_main_arena) {
+    int i;
+    mBinPtr bin;
+
+    /* Establish circular links for normal bins */
+    for (i = 1; i < NUM_BINS; ++i) {
+        bin = bins.bin_at(i);
+        bin->fd = bin->bk = bin;
+    }
+
+    if (!is_main_arena)
+        set_non_contiguous();
+
+    /* only in there wo set the have fast chunks bit */
+    flags |= HAVE_FAST_CHUNKS_BIT;
+
+    top_chunk =  initial_top();
+}
+
 
 int Arena::heap_trim(Heap *heap, size_t pad) {
     unsigned long pagesz = DEFAULT_PAGESIZE;
@@ -18,7 +78,7 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
     size_t new_size, top_size, extra;
 
     /* Can this heap go away completely? */
-    while (topChunk == offset2Chunk(heap, sizeof(*heap))) {
+    while (top_chunk == offset2Chunk(heap, sizeof(*heap))) {
         prev_heap = heap->prev_heap;
         /* Acquire the last fencepost chunk */
         p = offset2Chunk(prev_heap, prev_heap->size - (MINSIZE - 2 * SIZE_SZ));
@@ -35,7 +95,7 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
             new_size += p->prev_size;
         assert(new_size > 0 && new_size < HEAP_MAX_SIZE);
 
-        /* new_size equals the freed size */
+        /* new_size and the freed size */
         if (new_size + (HEAP_MAX_SIZE - prev_heap->size) < pad + MINSIZE + pagesz)
             break;
 
@@ -43,6 +103,7 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
         system_mem -= heap->size;
         delete heap;
         heap = prev_heap;
+
         /* set new top_chunk */
         if (!p->prev_inuse()) { /* consolidate backward */
             p = p->pre_chunk();
@@ -50,9 +111,9 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
         }
         assert(((unsigned long) ((char *) p + new_size) & (pagesz - 1)) == 0);
         assert(((char *) p + new_size) == ((char *) heap + heap->size));
-        topChunk = p;
-        topChunk->set_head(new_size | PREV_INUSE);
-        /*check_chunk(ar_ptr, top_chunk);*/
+        top_chunk = p;
+        top_chunk->set_head(new_size | PREV_INUSE);
+
     }
 
     /*
@@ -62,7 +123,7 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
       统计，更新 top chunk 的大小。
      */
 
-    top_size = topChunk->get_size();
+    top_size = top_chunk->get_size();
     extra = ((top_size - pad - MINSIZE + (pagesz - 1)) / pagesz - 1) * pagesz;
     if (extra < (long) pagesz)
         return 0;
@@ -74,71 +135,13 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
     system_mem -= extra;
 
     /* Success. Adjust top accordingly. */
-    topChunk->set_head((top_size - extra) | PREV_INUSE);
+    top_chunk->set_head((top_size - extra) | PREV_INUSE);
     /*check_chunk(ar_ptr, top_chunk);*/
     return 1;
 }
 
 
-void Arena::init(bool is_main_arena) {
-    int i;
-    mBinPtr bin;
 
-    /* Establish circular links for normal bins */
-    for (i = 1; i < NBINS; ++i) {
-        bin = bins.bin_at(i);
-        bin->fd = bin->bk = bin;
-    }
-
-    if (!is_main_arena)
-        set_non_contiguous();
-    else
-//        set_max_fast(DEFAULT_MXFAST);
-        ;
-
-    flags |= HAVE_FASTCHUNKS_BIT;
-
-    initial_top(); // may have error
-}
-
-
-mChunkPtr Arena::initial_top() {
-    return unsorted_chunks();
-}
-
-void Arena::set_non_contiguous() {
-    flags |= NONCONTIGUOUS_BIT;
-}
-
-
-bool Arena::have_fast_chunks() {
-    return (flags & HAVE_FASTCHUNKS_BIT) == 0;
-}
-
-void Arena::clear_fast_chunks() {
-    flags |= HAVE_FASTCHUNKS_BIT;
-}
-
-void Arena::set_fast_chunks() {
-    flags &= ~HAVE_FASTCHUNKS_BIT;
-}
-
-bool Arena::contiguous() {
-    return (flags & NONCONTIGUOUS_BIT) == 0;
-}
-
-bool Arena::non_contiguous() {
-    return (flags & NONCONTIGUOUS_BIT) != 0;
-}
-
-bool Arena::set_contiguous() {
-    flags &= ~NONCONTIGUOUS_BIT;
-}
-
-
-mChunkPtr Arena::unsorted_chunks() {
-    return (mChunkPtr) bins.bin_at(1);
-}
 
 
 

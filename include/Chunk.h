@@ -54,6 +54,7 @@ inline mChunkPtr offset2Chunk(void *p, size_t offset) {
 
 class Chunk {
     friend class Bins;
+    friend class Arena;
     friend class gcmalloc;
 public:
     /*--------------- Some size operations ---------------*/

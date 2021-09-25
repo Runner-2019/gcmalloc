@@ -21,42 +21,39 @@
 /* malloc state */
 class Arena {
 public:
-    int heap_trim(Heap *heap, size_t pad);
-    void init(bool is_main_arena);
-    mChunkPtr initial_top();
-
     /* have fast chunk or not */
-    bool have_fast_chunks();
+    [[nodiscard]] bool have_fast_chunks() const;
     void clear_fast_chunks();
     void set_fast_chunks();
 
     /* contiguous or not */
-    bool contiguous();
-    bool non_contiguous();
-    bool set_contiguous();
+    [[nodiscard]] bool contiguous() const;
+    [[nodiscard]] bool non_contiguous() const;
+    void set_contiguous();
     void set_non_contiguous();
 
-
-    /* The otherwise unindexable 1-bin is used to hold unsorted chunks. */
+public:
+    /* The otherwise un-index-able 1-bin is used to hold unsorted chunks. */
     mChunkPtr unsorted_chunks();
+    mChunkPtr initial_top();
 
+    void init(bool is_main_arena);
+    int heap_trim(Heap *heap, size_t pad);
 
 public:
+    friend class gcmalloc;
+private:
     Mutex mutex;
     int flags;
     FastBins fast_bins;
-    mChunkPtr topChunk;
+    mChunkPtr top_chunk;
     mChunkPtr last_remainder;
     Bins bins;
     BinMap binmap;
+    UsedBin used_bin;
     Arena *next;
     size_t system_mem;
     size_t max_system_mem;
 };
-
-
-
-extern void *MMAP(void *addr, size_t size, int prot, int flags);
-
 
 #endif //GCMALLOC_ARENA_H

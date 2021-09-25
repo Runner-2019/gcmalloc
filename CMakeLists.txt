@@ -33,4 +33,7 @@ add_executable(test_bin unittest/tst_bin.cpp Bin.cpp Chunk.cpp)
 target_link_libraries(test_bin gtest)
 add_test(Test test_bin)
 
-
+# gtest: tst_arena
+add_executable(test_arena unittest/tst_arena.cpp Arena.cpp Bin.cpp Chunk.cpp Heap.cpp)
+target_link_libraries(test_arena gtest)
+add_test(Test test_bin)
