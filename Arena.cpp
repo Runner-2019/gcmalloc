@@ -140,6 +140,22 @@ int Arena::heap_trim(Heap *heap, size_t pad) {
     return 1;
 }
 
+void Arena::lock_this_arena() {
+    m_mutex.lock();
+}
+
+void Arena::unlock_this_arena() {
+    m_mutex.unlock();
+}
+
+bool Arena::trylock_this_arena() {
+    return  m_mutex.trylock();
+}
+
+void Arena::init_this_arena_lock() {
+    m_mutex.init();
+}
+
 
 
 

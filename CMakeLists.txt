@@ -44,6 +44,14 @@ target_link_libraries(test_concurrency gtest)
 add_test(Test test_concurrency)
 
 # gtest: tst_gcmalloc
-add_executable(test_gcmalloc unittest/tst_gcmalloc.cpp ${SRC_LIST})
+add_executable(
+        test_gcmalloc
+        unittest/tst_gcmalloc.cpp
+        gcmalloc.cpp
+        Chunk.cpp
+        Bin.cpp
+        Arena.cpp
+        Heap.cpp
+        )
 target_link_libraries(test_gcmalloc gtest)
 add_test(Test test_gcmalloc)

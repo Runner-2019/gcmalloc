@@ -15,7 +15,7 @@
 #include <functional>
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <cerrno>
 
 inline void MALLOC_FAILURE_ACTION() {
     errno = ENOMEM;
@@ -57,23 +57,43 @@ struct gcmallocPar {
 };
 
 
+class TST_GCMALLOC;
+
 class gcmalloc {
+
 public:
     void *malloc(size_t bytes);
     void free(void *mem);
+    gcmalloc();
+
+
+private:
+    /* arena ops */
+    mArenaPtr get_arena(size_t sz);
+    mArenaPtr get_arena2(mArenaPtr a_tsd, size_t sz);
+    mArenaPtr createArena(size_t sz);
+    mArenaPtr main_arena();
+
+private:
+    /* init all */
+    void gcmalloc_init_minimal();
+    void init();
+
+    /* operate user's size */
+    bool request_out_of_range(size_t sz);
+    size_t req2size(size_t sz);
+    size_t checked_req2size(size_t sz);
+
+    /* ----------- Routines dealing with system allocation -------------- */
+    void *malloc_from_sys(size_t sz, mArenaPtr ap);
+    int trim_to_sys(size_t pad, mArenaPtr ap);
+    void munmap_chunk(mChunkPtr p);
+
 
 #ifdef GCMALLOC_DEBUG
+    /* for unit test*/
 private:
-    /*
-      Debugging support
-
-      These routines make a number of assertions about the states
-      of data structures that should be true at all times. If any
-      are not true, it's very likely that a user program has somehow
-      trashed memory. (It's also possible that there is a coding error
-      in malloc. In which case, please report it!)
-    */
-
+    /* Debugging support */
     void check_chunk(mArenaPtr ap, mChunkPtr cp);
     void check_free_chunk(mArenaPtr ap, mChunkPtr cp);
     void check_inuse_chunk(mArenaPtr ap, mChunkPtr cp);
@@ -85,52 +105,27 @@ private:
     void alloc_perturb(void *p, size_t n);
     void free_perturb(void *p, size_t n);
 
-
 #endif
 
-private:
-    void init();
-    bool request_out_of_range(size_t sz);
-
-    /* pad request bytes into a usable size -- internal version */
-    size_t req2size(size_t sz);
-    size_t check_req2size(size_t sz);
-
-    mArenaPtr get_arena(size_t sz);
-    mArenaPtr get_arena2(mArenaPtr a_tsd, size_t sz);
-
 
 private:
-    void gcmalloc_init_minimal();
     static mArenaPtr arena_for_chunk(mChunkPtr cp);
-
-    /* Create a new arena with initial size "size".  */
-    mArenaPtr createArena(size_t sz);
     void *_int_malloc(mArenaPtr ap, size_t sz);
     void _int_free(mArenaPtr ap, void *mem);
     void malloc_consolidate(mArenaPtr ap);
     void malloc_printerr(int action, const char *str, void *ptr);
 
 private:
-    /* ----------- Routines dealing with system allocation -------------- */
-    void *malloc_from_sys(size_t sz, mArenaPtr ap);
-    int trim_to_sys(size_t pad, mArenaPtr ap);
-    void munmap_chunk(mChunkPtr p);
+    gcmallocPar gcmp;
+    Arena _main_arena;
+    Tsd arena_key;
+    Mutex list_lock;
 
 private:
-    bool initialized;  /* whether being initialized */
-    gcmallocPar gcmp;
     mallocFuncType malloc_hook; // the real malloc version we used now
     mallocFuncType save_malloc_hook;
     freeFuncType free_hook;
     freeFuncType save_free_hook;
-
-public:
-    static Arena main_arena;
-
-    /* Support thread */
-    static Tsd arena_key;
-    static Mutex list_lock;
 };
 
 #endif //GCMALLOC_GCMALLOC_H

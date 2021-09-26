@@ -40,10 +40,17 @@ public:
     void init(bool is_main_arena);
     int heap_trim(Heap *heap, size_t pad);
 
+    /* mutex ops */
+    void init_this_arena_lock();
+    void lock_this_arena();
+    void unlock_this_arena();
+    bool trylock_this_arena();
+
 public:
     friend class gcmalloc;
+    Arena() noexcept = default;
 private:
-    Mutex mutex;
+    Mutex m_mutex;
     int flags;
     FastBins fast_bins;
     mChunkPtr top_chunk;
@@ -51,7 +58,7 @@ private:
     Bins bins;
     BinMap binmap;
     UsedBin used_bin;
-    Arena *next;
+    mArenaPtr next;
     size_t system_mem;
     size_t max_system_mem;
 };

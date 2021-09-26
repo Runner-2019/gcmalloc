@@ -40,12 +40,12 @@ TEST(TST_ARENA, tst_arena_contiguous_bit) {
     EXPECT_TRUE(a.contiguous());
 }
 
-TEST(TST_ARENA, tst_unsorted_chunks){
+TEST(TST_ARENA, tst_unsorted_chunks) {
     Arena a;
     /* no need to test now */
 }
 
-TEST(TST_ARENA, tst_init){
+TEST(TST_ARENA, tst_init) {
     Arena a, b;
 
     // main arena
@@ -62,7 +62,25 @@ TEST(TST_ARENA, tst_init){
 
 }
 
-TEST(TST_ARENA, tst_heap_trim){
+TEST(TST_ARENA, tst_lock) {
+    Arena arena;
+    arena.lock_this_arena();
+    EXPECT_FALSE(arena.trylock_this_arena());
+    arena.unlock_this_arena();
+    EXPECT_TRUE(arena.trylock_this_arena());
+    arena.unlock_this_arena();
+
+    Arena a1, a2;
+    a1.lock_this_arena();
+    a2.lock_this_arena();
+    EXPECT_FALSE(a1.trylock_this_arena());
+    EXPECT_FALSE(a2.trylock_this_arena());
+    a1.unlock_this_arena();
+    a2.unlock_this_arena();
+
+}
+
+TEST(TST_ARENA, tst_heap_trim) {
 
 }
 

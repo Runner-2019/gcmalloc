@@ -10,161 +10,162 @@
 */
 #include "include/gcmalloc.h"
 
-/* initialize static constant */
-Arena gcmalloc::main_arena;
-Tsd gcmalloc::arena_key;
-Mutex gcmalloc::list_lock;
-
-//
-//mArenaPtr gcmalloc::get_arena(size_t sz) {
-//    auto arena = (mArenaPtr) (arena_key.get());
-//    if (arena != nullptr && !(arena->mutex).trylock()) {
-//        return arena;
-//    } else {
-//        return (mArenaPtr) get_arena2(arena, sz);
-//    }
-//}
+///* initialize static constant */
+//Arena gcmalloc::main_arena;
+//Tsd gcmalloc::arena_key;
+//Mutex gcmalloc::list_lock;
 
 
-//mArenaPtr gcmalloc::get_arena2(mArenaPtr a_tsd, size_t sz) {
-//    mArenaPtr a;
-//
-//    if (!a_tsd)
-//        a = a_tsd = &main_arena;
-//    else {
-//        a = a_tsd->next;
-//        if (!a) {
-//            /* This can only happen while initializing the new arena. */
-//            main_arena.mutex.lock();
-//            return &main_arena;
-//        }
-//    }
-//
-//    /* Check the global, circularly linked list for available arenas. */
-//    bool retried = false;
-//    repeat:
-//    do {
-//        if (a->mutex.trylock()) { /* Lock success */
-//            /* If this is the second loop, the list_lock must be locked */
-//            if (retried)
-//                list_lock.unlock();
-//            arena_key.set(a);
-//            return a;
-//        }
-//        a = a->next;
-//    } while (a != a_tsd);
-//
-//    /*
-//        If not even the list_lock can be obtained, try again.  This can
-//        happen during `atfork', or for example on systems where thread
-//        creation makes it temporarily impossible to obtain any locks.
-//    */
-//    if (!retried && !list_lock.trylock()) {
-//        /* We will block to not run in a busy loop.  */
-//        list_lock.lock();
-//
-//        /* Since we blocked there might be an arena available now.  */
-//        retried = true;
-//        a = a_tsd;
-//        goto repeat;
-//    }
-//
-//    /* Nothing immediately available, so generate a new arena.  */
-//    a = createArena(sz);
-//    if (a) {
-//        arena_key.set(a);
-//        (a->mutex).lock();
-//
-//        /* Add the new arena to the global list.  */
-//        a->next = main_arena.next;
-//        main_arena.next = a;
-//    }
-//    list_lock.unlock();
-//    return a;
-//}
-//
-//
-//void gcmalloc::gcmalloc_init_minimal() {
-//    gcmp.top_pad = DEFAULT_TOP_PAD;
-//    gcmp.n_mmaps_max = DEFAULT_MMAP_MAX;
-//    gcmp.mmap_threshold = DEFAULT_MMAP_THRESHOLD;
-//    gcmp.trim_threshold = DEFAULT_TRIM_THRESHOLD;
-//    gcmp.pagesize = DEFAULT_PAGESIZE;
-//}
-//
-//void gcmalloc::init() {
-//    if (initialized) //already initialize
-//        return;
-//    initialized = false;
-//    gcmalloc_init_minimal();
-//
-//    /*
-//        With some threads implementations, creating thread-specific data
-//        or initializing a mutex may call malloc() itself.  Provide a
-//        simple starter version (now it won't work since first release).
-//     */
-//    main_arena.next = &main_arena;
-//    arena_key.set(static_cast<void *>(&main_arena));
-//
-//    // we can register fork in there in next release
-//    // we can read user's input to modify config in there in next release
-//}
-//
-//
-//mArenaPtr gcmalloc::createArena(size_t sz) {
-//    mArenaPtr a;
-//    Heap *h;
-//    char *ptr;
-//    unsigned long misalign;
-//
-//    h = new_heap(sz + (sizeof(*h) + sizeof(*a) + GCMALLOC_ALIGNMENT),
-//                 gcmp.top_pad);
-//
-//    if (!h) {
-//        /* Maybe size is too large to fit in a single heap.  So, just try
-//           to create a minimally-sized arena and let _int_malloc() attempt
-//           to deal with the large request via mmap_chunk().  */
-//        h = new_heap(sizeof(*h) + sizeof(*a) + GCMALLOC_ALIGNMENT, gcmp.top_pad);
-//        if (!h)
-//            return nullptr;
-//    }
-//    a = h->ar_ptr = (mArenaPtr) (h + 1);
-//    a->init(false);
-//    /*a->next = nullptr;*/
-//    a->system_mem = a->max_system_mem = h->size;
-//
-//
-//    /* Set up the top chunk, with proper alignment. */
-//    ptr = (char *) (a + 1);
-//
-//    misalign = (unsigned long) (ptr - 2 * SIZE_SZ) & GCMALLOC_ALIGN_MASK;
-//    if (misalign > 0)
-//        ptr += GCMALLOC_ALIGNMENT - misalign;
-//
-//    a->top_chunk = mem2Chunk(ptr);
-//    a->top_chunk->set_head(((char *) h + h->size - ptr) | PREV_INUSE);
-//    return a;
-//}
-//
-//bool gcmalloc::request_out_of_range(size_t sz) {
-//    return (unsigned long) sz >= (unsigned long) (size_t) (-2 * MINSIZE);
-//}
-//
-//size_t gcmalloc::req2size(size_t sz) {
-//    return (sz + SIZE_SZ + GCMALLOC_ALIGN_MASK < MINSIZE ?
-//            MINSIZE : \
-//            (sz + SIZE_SZ + GCMALLOC_ALIGN_MASK) & ~GCMALLOC_ALIGN_MASK);
-//}
-//
-//size_t gcmalloc::check_req2size(size_t sz) {
-//    if (request_out_of_range(sz)) {
-//        MALLOC_FAILURE_ACTION();
-//        return 0;
-//    }
-//    return req2size(sz);
-//}
-//
-//
+/* first of all, we will initialize the gcmalloc*/
+
+gcmalloc::gcmalloc() : gcmp{} {
+    init();
+}
+
+void gcmalloc::gcmalloc_init_minimal() {
+    gcmp.top_pad = DEFAULT_TOP_PAD;
+    gcmp.n_mmaps_max = DEFAULT_MMAP_MAX;
+    gcmp.mmap_threshold = DEFAULT_MMAP_THRESHOLD;
+    gcmp.trim_threshold = DEFAULT_TRIM_THRESHOLD;
+    gcmp.pagesize = DEFAULT_PAGESIZE;
+}
+
+void gcmalloc::init() {
+    gcmalloc_init_minimal();
+    /*
+        With some threads implementations, creating thread-specific data
+        or initializing a mutex may call malloc() itself.  Provide a
+        simple starter version (now it won't work since first release).
+     */
+    main_arena()->init(THIS_IS_MAIN_ARENA);
+    main_arena()->next = main_arena();
+    arena_key.set(main_arena());
+
+    // we can register fork in there in next release
+    // we can read user's input to modify config in there in next release
+}
+
+
+mArenaPtr gcmalloc::get_arena(size_t sz) {
+    auto arena = (mArenaPtr) (arena_key.get());
+    if (arena != nullptr && arena->trylock_this_arena()) {
+        return arena;
+    } else {
+        return (mArenaPtr) get_arena2(arena, sz);
+    }
+}
+
+
+mArenaPtr gcmalloc::get_arena2(mArenaPtr a_tsd, size_t sz) {
+    mArenaPtr a = a_tsd->next; /* In our version, a never equals to NULL */
+
+    /* Check the global, circularly linked list for available arenas. */
+    bool retried = false;
+    repeat:
+    do {
+        if (a->trylock_this_arena()) { /* Lock success */
+            /* If this is the second loop, the list_lock must be locked */
+            if (retried)
+                list_lock.unlock();
+            arena_key.set(a);
+            return a;
+        }
+        a = a->next;
+    } while (a != a_tsd);
+
+    /*
+        If not even the list_lock can be obtained, try again.  This can
+        happen during `atfork', or for example on systems where thread
+        creation makes it temporarily impossible to obtain any locks.
+    */
+    if (!retried && !list_lock.trylock()) {
+        /* We will block to not run in a busy loop.  */
+        list_lock.lock();
+
+        /* Since we blocked there might be an arena available now.  */
+        retried = true;
+        a = a_tsd;
+        goto repeat;
+    }
+
+    /* Nothing immediately available, so generate a new arena.  */
+    a = createArena(sz);
+    if (a) {
+        arena_key.set(a);
+        a->lock_this_arena();
+
+        /* Add the new arena to the global list.  */
+        a->next = main_arena()->next;
+        main_arena()->next = a;
+    }
+    list_lock.unlock();
+    return a;
+}
+
+mArenaPtr gcmalloc::createArena(size_t sz) {
+    mArenaPtr a;
+    Heap *h;
+    char *ptr;
+    unsigned long misalign;
+
+    h = new_heap(sz + (sizeof(*h) + sizeof(*a) + GCMALLOC_ALIGNMENT),
+                 gcmp.top_pad);
+
+    if (!h) {
+        /*
+            Maybe size is too large to fit in a single heap.  So, just try
+            to create a minimally-sized arena and let _int_malloc() attempt
+            to deal with the large request via mmap_chunk().
+        */
+        h = new_heap(sizeof(*h) + sizeof(*a) + GCMALLOC_ALIGNMENT, gcmp.top_pad);
+        if (!h)
+            return nullptr;
+    }
+
+    /* Arena is physical-closing to heap */
+    a = h->ar_ptr = (mArenaPtr) (h + 1);
+    a->init(THIS_IS_NON_MAIN_ARENA);
+    a->init_this_arena_lock();
+
+    /*a->next = nullptr;*/
+    a->system_mem = a->max_system_mem = h->size;
+
+
+    /* Set up the top chunk, with proper alignment. */
+    ptr = (char *) (a + 1);
+    misalign = ((unsigned long) (ptr + 2 * SIZE_SZ)) & GCMALLOC_ALIGN_MASK;
+    if (misalign > 0)
+        ptr += GCMALLOC_ALIGNMENT - misalign;
+
+    a->top_chunk = (mChunkPtr) (ptr);
+    a->top_chunk->set_head(((char *) h + h->size - ptr) | PREV_INUSE);
+    return a;
+}
+
+mArenaPtr gcmalloc::main_arena() {
+    return &_main_arena;
+}
+
+/* mod user's size */
+bool gcmalloc::request_out_of_range(size_t sz) {
+    return (unsigned long) sz >= (unsigned long) (size_t) (-2 * MINSIZE);
+}
+
+size_t gcmalloc::req2size(size_t sz) {
+    return (sz + CHUNK_OVER_HEAD + GCMALLOC_ALIGN_MASK < MINSIZE ?
+            MINSIZE : \
+            (sz + CHUNK_OVER_HEAD + GCMALLOC_ALIGN_MASK) & ~GCMALLOC_ALIGN_MASK);
+}
+
+size_t gcmalloc::checked_req2size(size_t sz) {
+    if (request_out_of_range(sz)) {
+        MALLOC_FAILURE_ACTION();
+        return 0;
+    }
+    return req2size(sz);
+}
+
+
 //mArenaPtr gcmalloc::arena_for_chunk(mChunkPtr cp) {
 //    return cp->is_in_non_main_arena() ? cp->belonged_heap()->ar_ptr : &main_arena;
 //}
@@ -446,401 +447,401 @@ Mutex gcmalloc::list_lock;
 //           (unsigned long) (gcmp.max_mmapped_mem));
 //
 //}
-//
-//void *gcmalloc::malloc_from_sys(size_t nb, mArenaPtr ap) {
-//    mChunkPtr old_top;      /* incoming value of ap->top_chunk */
-//    size_t old_size;        /* its size */
-//    char *old_end;          /* its end address */
-//
-//    long size;              /* arg to first sbrk or mmap call */
-//    char *brk;              /* return value from sbrk */
-//
-//    long correction;        /* arg to 2nd sbrk call */
-//    char *snd_brk;          /* 2nd return val */
-//
-//    size_t front_misalign;  /* unusable bytes at front of new space */
-//    size_t end_misalign;    /* partial page left at end of new space */
-//    char *aligned_brk;      /* aligned offset into brk */
-//
-//    mChunkPtr p;                    /* the allocated/returned chunk */
-//    mChunkPtr remainder;            /* remainder from allocation */
-//    unsigned long remainder_size;   /* its size */
-//
-//    unsigned long sum;            /* for updating stats */
-//
-//    size_t pagemask = gcmp.pagesize - 1;
-//    bool tried_mmap = false;
-//
-//    /*
-//          If the request size meets the mmap threshold, and
-//          the system supports mmap, and there are few enough currently
-//          allocated mmapped regions, try to directly map this request
-//          rather than expanding top.
-//    */
-//
-//    if ((unsigned long) (nb) >= (unsigned long) (gcmp.mmap_threshold) &&
-//        (gcmp.n_mmaps < gcmp.n_mmaps_max)) {
-//
-//        char *mm;             /* return value from mmap call*/
-//
-//        try_mmap:
-//        /*
-//            Round up size to nearest page.  For mmapped chunks, the overhead
-//            is one SIZE_SZ unit larger than for normal chunks, because there
-//            is no following chunk whose prev_size field could be used.
-//
-//            See the front_misalign handling below, for glibc there is no
-//            need for further alignments.
-//        */
-//
-//        size = (nb + SIZE_SZ + pagemask) & ~pagemask;
-//        tried_mmap = true;
-//
-//        /* Don't try if size wraps around 0 */
-//        if ((unsigned long) (size) > (unsigned long) (nb)) {
-//
-//            mm = (char *) (MMAP(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE));
-//
-//            if (mm != MAP_FAILED) {
-//
-//                /*
-//                    The offset to the start of the mmapped region is stored
-//                    in the prev_size field of the chunk. This allows us to adjust
-//                    returned start address to meet alignment requirements here
-//                    and in memalign(), and still be able to compute proper
-//                    address argument for later munmap in free() and realloc().
-//                */
-//
-//#if 1
-//                /*
-//                    For glibc, chunk2mem increases the address by 2*SIZE_SZ and
-//                    GCMALLOC_ALIGN_MASK is 2*SIZE_SZ-1.  Each mmap'ed area is page
-//                    aligned and therefore definitely GCMALLOC_ALIGN_MASK-aligned.
-//                */
-//                assert (((size_t) mm & GCMALLOC_ALIGN_MASK) == 0);
-//#endif
-//
-//                p = (mChunkPtr) mm;
-//                p->set_head(size | IS_MMAPPED);
-//
-//
-//                /* update statistics */
-//                sum = gcmp.mmapped_mem += size;
-//                if (sum > (unsigned long) (gcmp.max_mmapped_mem))
-//                    gcmp.max_mmapped_mem = sum;
-//
-//                check_chunk(ap, p);
-//                return p->chunk2mem();
-//            }
-//        }
-//    }
-//
-//    /* Record incoming configuration of top */
-//    old_top = ap->top_chunk;
-//    old_size = old_top->get_size();
-//    old_end = (char *) (offset2Chunk(old_top, old_size));
-//
-//    brk = snd_brk = (char *) (-1);
-//
-//    /*
-//       If not the first time through, we require old_size to be
-//       at least MINSIZE and to have prev_inuse set.
-//    */
-//
-//    assert((old_top == ap->initial_top() && old_size == 0) ||
-//           ((unsigned long) (old_size) >= MINSIZE &&
-//            old_top->prev_inuse() &&
-//            ((unsigned long) old_end & pagemask) == 0));
-//
-//    /* Precondition: not enough current space to satisfy nb request */
-//    assert((unsigned long) (old_size) < (unsigned long) (nb + MINSIZE));
-//
-//    /* Precondition: all fastbins are consolidated */
-//    assert(!ap->have_fast_chunks());
-//
-//    if (ap != &main_arena) {
-//
-//        Heap *old_heap, *heap;
-//        size_t old_heap_size;
-//
-//        /* First try to extend the current heap. */
-//        old_heap = old_top->belonged_heap();
-//        old_heap_size = old_heap->size;
-//        if ((long) (MINSIZE + nb - old_size) > 0
-//            && old_heap->grow(MINSIZE + nb - old_size) == 0) {
-//
-//            ap->system_mem += old_heap->size - old_heap_size;
-//            old_top->set_head((((char *) old_heap + old_heap->size) - (char *) old_top)
-//                              | PREV_INUSE);
-//        } else if ((heap = new_heap(nb + (MINSIZE + sizeof(*heap)), gcmp.top_pad))) {
-//            /* Use a newly allocated heap.  */
-//            heap->ar_ptr = ap;
-//            heap->prev_heap = old_heap;
-//            ap->system_mem += heap->size;
-//
-//            /* Set up the new top.  */
-//            ap->top_chunk = offset2Chunk(heap, sizeof(*heap));
-//            ap->top_chunk->set_head((heap->size - sizeof(*heap)) | PREV_INUSE);
-//
-//            /*
-//                Setup fencepost and free the old top chunk.
-//                The fencepost takes at least MINSIZE bytes, because it might
-//                become the top chunk again later.  Note that a footer is set
-//                up, too, although the chunk is marked in use.
-//            */
-//
-//            old_size -= MINSIZE;
-//            offset2Chunk(old_top, old_size + 2 * SIZE_SZ)->set_head(0 | PREV_INUSE);
-//            if (old_size >= MINSIZE) {
-//                offset2Chunk(old_top, old_size)->set_head((2 * SIZE_SZ) | PREV_INUSE);
-//                offset2Chunk(old_top, old_size)->set_head((2 * SIZE_SZ));
-//                old_top->set_head(old_size | PREV_INUSE | NON_MAIN_ARENA);
-//                _int_free(ap, old_top->chunk2mem());
-//            } else {
-//                old_top->set_head((old_size + 2 * SIZE_SZ) | PREV_INUSE);
-//                old_top->set_foot(old_size + 2 * SIZE_SZ);
-//            }
-//        } else if (!tried_mmap)
-//            /* We can at least try to use to mmap memory.  */
-//            goto try_mmap;
-//
-//    } else { /* av == main_arena */
-//        /* Request enough space for nb + pad + overhead */
-//        size = nb + gcmp.top_pad + MINSIZE;
-//
-//        /*
-//            If contiguous, we can subtract out existing space that we hope to
-//            combine with new space. We add it back later only if
-//            we don't actually get contiguous space.
-//        */
-//
-//        if (ap->contiguous())
-//            size -= old_size;
-//
-//        /*
-//            Round to a multiple of page size.
-//            If sbrk is not contiguous, this ensures that we only call it
-//            with whole-page arguments.  And if sbrk is contiguous and
-//            this is not first time through, this preserves page-alignment of
-//            previous calls. Otherwise, we correct to page-align below.
-//        */
-//
-//        size = (size + pagemask) & ~pagemask;
-//
-//        /*
-//          Don't try to call sbrk if argument is so big as to appear
-//          negative. Note that since mmap takes size_t arg, it may succeed
-//          below even if we cannot call sbrk.
-//        */
-//
-//        if (size > 0)
-//            brk = (char *) (sbrk(size));
-//
-//        if (brk != (char *) (-1)) {
-//            /*
-//                If have mmap, try using it as a backup when sbrk fails or
-//                cannot be used. This is worth doing on systems that have "holes" in
-//                address space, so sbrk cannot extend to give contiguous space, but
-//                space is available elsewhere.  Note that we ignore mmap max count
-//                and threshold limits, since the space will not be used as a
-//                segregated mmap region.
-//            */
-//
-//            /* Cannot merge with old top, so add its size back in */
-//            if (ap->contiguous())
-//                size = (size + old_size + pagemask) & ~pagemask;
-//
-//            /* If we are relying on mmap as backup, then use larger units */
-//            if ((unsigned long) (size) < (unsigned long) (MMAP_AS_SBRK_SIZE))
-//                size = MMAP_AS_SBRK_SIZE;
-//
-//            /* Don't try if size wraps around 0 */
-//            if ((unsigned long) (size) > (unsigned long) (nb)) {
-//
-//                char *mbrk = (char *) (MMAP(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE));
-//
-//                if (mbrk != MAP_FAILED) {
-//
-//                    /* We do not need, and cannot use, another sbrk call to find end */
-//                    brk = mbrk;
-//                    snd_brk = brk + size;
-//
-//                    /*
-//                       Record that we no longer have a contiguous sbrk region.
-//                       After the first time mmap is used as backup, we do not
-//                       ever rely on contiguous space since this could incorrectly
-//                       bridge regions.
-//                    */
-//                    ap->set_non_contiguous();
-//                }
-//            }
-//        }
-//
-//        if (brk != (char *) (-1)) {
-//            if (gcmp.sbrk_base == nullptr)
-//                gcmp.sbrk_base = brk;
-//            ap->system_mem += size;
-//
-//            /* If sbrk extends previous space, we can likewise extend top size. */
-//
-//            if (brk == old_end && snd_brk == (char *) (-1))
-//                old_top->set_head((size + old_size) | PREV_INUSE);
-//            else if (ap->contiguous() && old_size && brk < old_end) {
-//                /* Oops!  Someone else killed our space..  Can't touch anything.  */
-//                assert(0);
-//            }
-//
-//                /*
-//                    Otherwise, make adjustments:
-//
-//                    * If the first time through or noncontiguous, we need to call sbrk
-//                    just to find out where the end of memory lies.
-//
-//                    * We need to ensure that all returned chunks from malloc will meet
-//                    GCMALLOC_ALIGNMENT
-//
-//                    * If there was an intervening foreign sbrk, we need to adjust sbrk
-//                    request size to account for fact that we will not be able to
-//                    combine new space with existing space in old_top.
-//
-//                    * Almost all systems internally allocate whole pages at a time, in
-//                    which case we might as well use the whole last page of request.
-//                    So we allocate enough more memory to hit a page boundary now,
-//                    which in turn causes future contiguous calls to page-align.
-//                */
-//
-//            else {
-//                front_misalign = 0;
-//                end_misalign = 0;
-//                correction = 0;
-//                aligned_brk = brk;
-//
-//                /* handle contiguous cases */
-//                if (ap->contiguous()) {
-//
-//                    /* Count foreign sbrk as system_mem.  */
-//                    if (old_size)
-//                        ap->system_mem += brk - old_end;
-//
-//                    /* Guarantee alignment of first new chunk made from this space */
-//                    front_misalign = (size_t) (brk + 2 * SIZE_SZ) & GCMALLOC_ALIGN_MASK;
-//                    if (front_misalign > 0) {
-//                        /*
-//                            Skip over some bytes to arrive at an aligned position.
-//                            We don't need to specially mark these wasted front bytes.
-//                            They will never be accessed anyway because
-//                            prev_inuse of ap->top_chunk (and any chunk created from its start)
-//                            is always true after initialization.
-//                        */
-//                        correction = GCMALLOC_ALIGNMENT - front_misalign;
-//                        aligned_brk += correction;
-//                    }
-//
-//                    /*
-//                        If this isn't adjacent to existing space, then we will not
-//                        be able to merge with old_top space, so must add to 2nd request.
-//                    */
-//                    correction += old_size;
-//
-//                    /* Extend the end address to hit a page boundary */
-//                    end_misalign = (size_t) (brk + size + correction);
-//                    correction += ((end_misalign + pagemask) & ~pagemask) - end_misalign;
-//
-//                    assert(correction >= 0);
-//                    snd_brk = (char *) (sbrk(correction));
-//
-//                    /*
-//                        If can't allocate correction, try to at least find out current
-//                        brk.  It might be enough to proceed without failing.
-//
-//                        Note that if second sbrk did NOT fail, we assume that space
-//                        is contiguous with first sbrk. This is a safe assumption unless
-//                        program is multi-threaded but doesn't use locks and a foreign
-//                        sbrk occurred between our first and second calls.
-//                    */
-//
-//                    if (snd_brk == (char *) (-1)) {
-//                        correction = 0;
-//                        snd_brk = (char *) (sbrk(0));
-//                    } else { /* handle non-contiguous cases */
-//                        /* sbrk/mmap must correctly align */
-//                        assert(((unsigned long) (brk + 2 * SIZE_SZ) & GCMALLOC_ALIGN_MASK) == 0);
-//
-//                        /* Find out current end of memory */
-//                        if (snd_brk == (char *) (-1)) {
-//                            snd_brk = (char *) (sbrk(0));
-//                        }
-//                    }
-//
-//                    /* Adjust top based on results of second sbrk */
-//                    if (snd_brk != (char *) (-1)) {
-//                        ap->top_chunk = (mChunkPtr) aligned_brk;
-//                        ap->top_chunk->set_head((snd_brk - aligned_brk + correction) | PREV_INUSE);
-//                        ap->system_mem += correction;
-//
-//                        /*
-//                            If not the first time through, we either have a
-//                            gap due to foreign sbrk or a non-contiguous region.  Insert a
-//                            double fencepost at old_top to prevent consolidation with space
-//                            we don't own. These fenceposts are artificial chunks that are
-//                            marked as inuse and are in any case too small to use.  We need
-//                            two to make sizes and alignments work out.
-//                        */
-//
-//                        if (old_size != 0) {
-//                            /*
-//                               Shrink old_top to insert fenceposts, keeping size a
-//                               multiple of MALLOC_ALIGNMENT. We know there is at least
-//                               enough space in old_top to do this.
-//                            */
-//                            old_size = (old_size - 4 * SIZE_SZ) & ~GCMALLOC_ALIGN_MASK;
-//                            old_top->set_head(old_size | PREV_INUSE);
-//
-//                            /*
-//                                Note that the following assignments completely overwrite
-//                                old_top when old_size was previously MINSIZE.  This is
-//                                intentional. We need the fencepost, even if old_top otherwise gets
-//                                lost.
-//                            */
-//                            offset2Chunk(old_top, old_size)->size = (2 * SIZE_SZ) | PREV_INUSE;
-//                            offset2Chunk(old_top, old_size + 2 * SIZE_SZ)->size = (2 * SIZE_SZ) | PREV_INUSE;
-//
-//                            /* If possible, release the rest. */
-//                            if (old_size >= MINSIZE) {
-//                                _int_free(ap, old_top->chunk2mem());
-//                            }
-//
-//                        }
-//                    }
-//                }
-//            }
-//        } /* if (av !=  &main_arena) */
-//
-//        if ((unsigned long) ap->system_mem > (unsigned long) (ap->max_system_mem))
-//            ap->max_system_mem = ap->system_mem;
-//        check_malloc_state(ap);
-//
-//        /* finally, do the allocation */
-//        p = ap->top_chunk;
-//        size = p->get_size();
-//
-//        /* check that one of the above allocation paths succeeded */
-//        if ((unsigned long) (size) >= (unsigned long) (nb + MINSIZE)) {
-//            remainder_size = size - nb;
-//            remainder = offset2Chunk(p, nb);
-//            ap->top_chunk = remainder;
-//            p->set_head(nb | PREV_INUSE | (ap != &main_arena ? NON_MAIN_ARENA : 0));
-//            remainder->set_head(remainder_size | PREV_INUSE);
-//            check_malloced_chunk(ap, p, nb);
-//            return p->chunk2mem();
-//        }
-//
-//        /* catch all failure paths */
-//        MALLOC_FAILURE_ACTION;
-//        return nullptr;
-//    }
-//}
-//
+
+void *gcmalloc::malloc_from_sys(size_t nb, mArenaPtr ap) {
+    mChunkPtr old_top;      /* incoming value of ap->top_chunk */
+    size_t old_size;        /* its size */
+    char *old_end;          /* its end address */
+
+    long size;              /* arg to first sbrk or mmap call */
+    char *brk;              /* return value from sbrk */
+
+    long correction;        /* arg to 2nd sbrk call */
+    char *snd_brk;          /* 2nd return val */
+
+    size_t front_misalign;  /* unusable bytes at front of new space */
+    size_t end_misalign;    /* partial page left at end of new space */
+    char *aligned_brk;      /* aligned offset into brk */
+
+    mChunkPtr p;                    /* the allocated/returned chunk */
+    mChunkPtr remainder;            /* remainder from allocation */
+    unsigned long remainder_size;   /* its size */
+
+    unsigned long sum;            /* for updating stats */
+
+    size_t pagemask = gcmp.pagesize - 1;
+    bool tried_mmap = false;
+
+    /*
+          If the request size meets the mmap threshold, and
+          the system supports mmap, and there are few enough currently
+          allocated mmapped regions, try to directly map this request
+          rather than expanding top.
+    */
+
+    if ((unsigned long) (nb) >= (unsigned long) (gcmp.mmap_threshold) &&
+        (gcmp.n_mmaps < gcmp.n_mmaps_max)) {
+
+        char *mm;             /* return value from mmap call*/
+
+        try_mmap:
+        /*
+            Round up size to nearest page.  For mmapped chunks, the overhead
+            is one SIZE_SZ unit larger than for normal chunks, because there
+            is no following chunk whose prev_size field could be used.
+
+            See the front_misalign handling below, for glibc there is no
+            need for further alignments.
+        */
+
+        size = (nb + SIZE_SZ + pagemask) & ~pagemask;
+        tried_mmap = true;
+
+        /* Don't try if size wraps around 0 */
+        if ((unsigned long) (size) > (unsigned long) (nb)) {
+
+            mm = (char *) (MMAP(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE));
+
+            if (mm != MAP_FAILED) {
+
+                /*
+                    The offset to the start of the mmapped region is stored
+                    in the prev_size field of the chunk. This allows us to adjust
+                    returned start address to meet alignment requirements here
+                    and in memalign(), and still be able to compute proper
+                    address argument for later munmap in free() and realloc().
+                */
+
+#if 1
+                /*
+                    For glibc, chunk2mem increases the address by 2*SIZE_SZ and
+                    GCMALLOC_ALIGN_MASK is 2*SIZE_SZ-1.  Each mmap'ed area is page
+                    aligned and therefore definitely GCMALLOC_ALIGN_MASK-aligned.
+                */
+                assert (((size_t) mm & GCMALLOC_ALIGN_MASK) == 0);
+#endif
+
+                p = (mChunkPtr) mm;
+                p->set_head(size | IS_MMAPPED);
+
+
+                /* update statistics */
+                sum = gcmp.mmapped_mem += size;
+                if (sum > (unsigned long) (gcmp.max_mmapped_mem))
+                    gcmp.max_mmapped_mem = sum;
+
+                check_chunk(ap, p);
+                return p->chunk2mem();
+            }
+        }
+    }
+
+    /* Record incoming configuration of top */
+    old_top = ap->top_chunk;
+    old_size = old_top->get_size();
+    old_end = (char *) (offset2Chunk(old_top, old_size));
+
+    brk = snd_brk = (char *) (-1);
+
+    /*
+       If not the first time through, we require old_size to be
+       at least MINSIZE and to have prev_inuse set.
+    */
+
+    assert((old_top == ap->initial_top() && old_size == 0) ||
+           ((unsigned long) (old_size) >= MINSIZE &&
+            old_top->prev_inuse() &&
+            ((unsigned long) old_end & pagemask) == 0));
+
+    /* Precondition: not enough current space to satisfy nb request */
+    assert((unsigned long) (old_size) < (unsigned long) (nb + MINSIZE));
+
+    /* Precondition: all fastbins are consolidated */
+    assert(!ap->have_fast_chunks());
+
+    if (ap != main_arena()) {
+
+        Heap *old_heap, *heap;
+        size_t old_heap_size;
+
+        /* First try to extend the current heap. */
+        old_heap = old_top->belonged_heap();
+        old_heap_size = old_heap->size;
+        if ((long) (MINSIZE + nb - old_size) > 0
+            && old_heap->grow(MINSIZE + nb - old_size) == 0) {
+
+            ap->system_mem += old_heap->size - old_heap_size;
+            old_top->set_head((((char *) old_heap + old_heap->size) - (char *) old_top)
+                              | PREV_INUSE);
+        } else if ((heap = new_heap(nb + (MINSIZE + sizeof(*heap)), gcmp.top_pad))) {
+            /* Use a newly allocated heap.  */
+            heap->ar_ptr = ap;
+            heap->prev_heap = old_heap;
+            ap->system_mem += heap->size;
+
+            /* Set up the new top.  */
+            ap->top_chunk = offset2Chunk(heap, sizeof(*heap));
+            ap->top_chunk->set_head((heap->size - sizeof(*heap)) | PREV_INUSE);
+
+            /*
+                Setup fencepost and free the old top chunk.
+                The fencepost takes at least MINSIZE bytes, because it might
+                become the top chunk again later.  Note that a footer is set
+                up, too, although the chunk is marked in use.
+            */
+
+            old_size -= MINSIZE;
+            offset2Chunk(old_top, old_size + 2 * SIZE_SZ)->set_head(0 | PREV_INUSE);
+            if (old_size >= MINSIZE) {
+                offset2Chunk(old_top, old_size)->set_head((2 * SIZE_SZ) | PREV_INUSE);
+                offset2Chunk(old_top, old_size)->set_head((2 * SIZE_SZ));
+                old_top->set_head(old_size | PREV_INUSE | NON_MAIN_ARENA);
+                _int_free(ap, old_top->chunk2mem());
+            } else {
+                old_top->set_head((old_size + 2 * SIZE_SZ) | PREV_INUSE);
+                old_top->set_foot(old_size + 2 * SIZE_SZ);
+            }
+        } else if (!tried_mmap)
+            /* We can at least try to use to mmap memory.  */
+            goto try_mmap;
+
+    } else { /* av == main_arena */
+        /* Request enough space for nb + pad + overhead */
+        size = nb + gcmp.top_pad + MINSIZE;
+
+        /*
+            If contiguous, we can subtract out existing space that we hope to
+            combine with new space. We add it back later only if
+            we don't actually get contiguous space.
+        */
+
+        if (ap->contiguous())
+            size -= old_size;
+
+        /*
+            Round to a multiple of page size.
+            If sbrk is not contiguous, this ensures that we only call it
+            with whole-page arguments.  And if sbrk is contiguous and
+            this is not first time through, this preserves page-alignment of
+            previous calls. Otherwise, we correct to page-align below.
+        */
+
+        size = (size + pagemask) & ~pagemask;
+
+        /*
+          Don't try to call sbrk if argument is so big as to appear
+          negative. Note that since mmap takes size_t arg, it may succeed
+          below even if we cannot call sbrk.
+        */
+
+        if (size > 0)
+            brk = (char *) (sbrk(size));
+
+        if (brk != (char *) (-1)) {
+            /*
+                If have mmap, try using it as a backup when sbrk fails or
+                cannot be used. This is worth doing on systems that have "holes" in
+                address space, so sbrk cannot extend to give contiguous space, but
+                space is available elsewhere.  Note that we ignore mmap max count
+                and threshold limits, since the space will not be used as a
+                segregated mmap region.
+            */
+
+            /* Cannot merge with old top, so add its size back in */
+            if (ap->contiguous())
+                size = (size + old_size + pagemask) & ~pagemask;
+
+            /* If we are relying on mmap as backup, then use larger units */
+            if ((unsigned long) (size) < (unsigned long) (MMAP_AS_SBRK_SIZE))
+                size = MMAP_AS_SBRK_SIZE;
+
+            /* Don't try if size wraps around 0 */
+            if ((unsigned long) (size) > (unsigned long) (nb)) {
+
+                char *mbrk = (char *) (MMAP(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE));
+
+                if (mbrk != MAP_FAILED) {
+
+                    /* We do not need, and cannot use, another sbrk call to find end */
+                    brk = mbrk;
+                    snd_brk = brk + size;
+
+                    /*
+                       Record that we no longer have a contiguous sbrk region.
+                       After the first time mmap is used as backup, we do not
+                       ever rely on contiguous space since this could incorrectly
+                       bridge regions.
+                    */
+                    ap->set_non_contiguous();
+                }
+            }
+        }
+
+        if (brk != (char *) (-1)) {
+            if (gcmp.sbrk_base == nullptr)
+                gcmp.sbrk_base = brk;
+            ap->system_mem += size;
+
+            /* If sbrk extends previous space, we can likewise extend top size. */
+
+            if (brk == old_end && snd_brk == (char *) (-1))
+                old_top->set_head((size + old_size) | PREV_INUSE);
+            else if (ap->contiguous() && old_size && brk < old_end) {
+                /* Oops!  Someone else killed our space..  Can't touch anything.  */
+                assert(0);
+            }
+
+                /*
+                    Otherwise, make adjustments:
+
+                    * If the first time through or noncontiguous, we need to call sbrk
+                    just to find out where the end of memory lies.
+
+                    * We need to ensure that all returned chunks from malloc will meet
+                    GCMALLOC_ALIGNMENT
+
+                    * If there was an intervening foreign sbrk, we need to adjust sbrk
+                    request size to account for fact that we will not be able to
+                    combine new space with existing space in old_top.
+
+                    * Almost all systems internally allocate whole pages at a time, in
+                    which case we might as well use the whole last page of request.
+                    So we allocate enough more memory to hit a page boundary now,
+                    which in turn causes future contiguous calls to page-align.
+                */
+
+            else {
+                front_misalign = 0;
+                end_misalign = 0;
+                correction = 0;
+                aligned_brk = brk;
+
+                /* handle contiguous cases */
+                if (ap->contiguous()) {
+
+                    /* Count foreign sbrk as system_mem.  */
+                    if (old_size)
+                        ap->system_mem += brk - old_end;
+
+                    /* Guarantee alignment of first new chunk made from this space */
+                    front_misalign = (size_t) (brk + 2 * SIZE_SZ) & GCMALLOC_ALIGN_MASK;
+                    if (front_misalign > 0) {
+                        /*
+                            Skip over some bytes to arrive at an aligned position.
+                            We don't need to specially mark these wasted front bytes.
+                            They will never be accessed anyway because
+                            prev_inuse of ap->top_chunk (and any chunk created from its start)
+                            is always true after initialization.
+                        */
+                        correction = GCMALLOC_ALIGNMENT - front_misalign;
+                        aligned_brk += correction;
+                    }
+
+                    /*
+                        If this isn't adjacent to existing space, then we will not
+                        be able to merge with old_top space, so must add to 2nd request.
+                    */
+                    correction += old_size;
+
+                    /* Extend the end address to hit a page boundary */
+                    end_misalign = (size_t) (brk + size + correction);
+                    correction += ((end_misalign + pagemask) & ~pagemask) - end_misalign;
+
+                    assert(correction >= 0);
+                    snd_brk = (char *) (sbrk(correction));
+
+                    /*
+                        If can't allocate correction, try to at least find out current
+                        brk.  It might be enough to proceed without failing.
+
+                        Note that if second sbrk did NOT fail, we assume that space
+                        is contiguous with first sbrk. This is a safe assumption unless
+                        program is multi-threaded but doesn't use locks and a foreign
+                        sbrk occurred between our first and second calls.
+                    */
+
+                    if (snd_brk == (char *) (-1)) {
+                        correction = 0;
+                        snd_brk = (char *) (sbrk(0));
+                    } else { /* handle non-contiguous cases */
+                        /* sbrk/mmap must correctly align */
+                        assert(((unsigned long) (brk + 2 * SIZE_SZ) & GCMALLOC_ALIGN_MASK) == 0);
+
+                        /* Find out current end of memory */
+                        if (snd_brk == (char *) (-1)) {
+                            snd_brk = (char *) (sbrk(0));
+                        }
+                    }
+
+                    /* Adjust top based on results of second sbrk */
+                    if (snd_brk != (char *) (-1)) {
+                        ap->top_chunk = (mChunkPtr) aligned_brk;
+                        ap->top_chunk->set_head((snd_brk - aligned_brk + correction) | PREV_INUSE);
+                        ap->system_mem += correction;
+
+                        /*
+                            If not the first time through, we either have a
+                            gap due to foreign sbrk or a non-contiguous region.  Insert a
+                            double fencepost at old_top to prevent consolidation with space
+                            we don't own. These fenceposts are artificial chunks that are
+                            marked as inuse and are in any case too small to use.  We need
+                            two to make sizes and alignments work out.
+                        */
+
+                        if (old_size != 0) {
+                            /*
+                               Shrink old_top to insert fenceposts, keeping size a
+                               multiple of MALLOC_ALIGNMENT. We know there is at least
+                               enough space in old_top to do this.
+                            */
+                            old_size = (old_size - 4 * SIZE_SZ) & ~GCMALLOC_ALIGN_MASK;
+                            old_top->set_head(old_size | PREV_INUSE);
+
+                            /*
+                                Note that the following assignments completely overwrite
+                                old_top when old_size was previously MINSIZE.  This is
+                                intentional. We need the fencepost, even if old_top otherwise gets
+                                lost.
+                            */
+                            offset2Chunk(old_top, old_size)->size = (2 * SIZE_SZ) | PREV_INUSE;
+                            offset2Chunk(old_top, old_size + 2 * SIZE_SZ)->size = (2 * SIZE_SZ) | PREV_INUSE;
+
+                            /* If possible, release the rest. */
+                            if (old_size >= MINSIZE) {
+                                _int_free(ap, old_top->chunk2mem());
+                            }
+
+                        }
+                    }
+                }
+            }
+        } /* if (av !=  &main_arena) */
+
+        if ((unsigned long) ap->system_mem > (unsigned long) (ap->max_system_mem))
+            ap->max_system_mem = ap->system_mem;
+        check_malloc_state(ap);
+
+        /* finally, do the allocation */
+        p = ap->top_chunk;
+        size = p->get_size();
+
+        /* check that one of the above allocation paths succeeded */
+        if ((unsigned long) (size) >= (unsigned long) (nb + MINSIZE)) {
+            remainder_size = size - nb;
+            remainder = offset2Chunk(p, nb);
+            ap->top_chunk = remainder;
+            p->set_head(nb | PREV_INUSE | (ap != main_arena() ? NON_MAIN_ARENA : 0));
+            remainder->set_head(remainder_size | PREV_INUSE);
+            check_malloced_chunk(ap, p, nb);
+            return p->chunk2mem();
+        }
+
+        /* catch all failure paths */
+        MALLOC_FAILURE_ACTION;
+        return nullptr;
+    }
+}
+
 //int gcmalloc::trim_to_sys(size_t pad, mArenaPtr ap) {
 //    long top_size;          /* Amount of top-most memory */
 //    long extra;             /* Amount to release */

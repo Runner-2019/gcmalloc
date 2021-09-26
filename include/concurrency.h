@@ -11,13 +11,12 @@
 
 #ifndef GCMALLOC_CONCURRENCY_H
 #define GCMALLOC_CONCURRENCY_H
-#include <mutex>
 #include <pthread.h>
 
 /* A wrapper of thread specific thread */
 class Tsd {
 public:
-    Tsd() { create(); }
+    Tsd() noexcept { pthread_key_create(&m_arena_key, nullptr); }
 
     ~Tsd() { pthread_key_delete(m_arena_key); }
 
@@ -32,21 +31,19 @@ public:
 
 
 private:
-    void create() {
-        pthread_key_create(&m_arena_key, nullptr);
-    }
-
     pthread_key_t m_arena_key{};
 };
 
 
 class Mutex {
 public:
-    void lock() { m.lock(); }
-    void unlock() { m.unlock(); }
-    bool trylock() { return m.try_lock(); } // if lock success, return true
+    Mutex() { init(); }
+    void lock() { pthread_mutex_lock(&m); }
+    void unlock() { pthread_mutex_unlock(&m); }
+    bool trylock() { return pthread_mutex_trylock(&m) == 0; } // if lock success, return true
+    void init() { pthread_mutex_init(&m, nullptr); }
 private:
-    std::mutex m;
+    pthread_mutex_t m;
 };
 
 #endif //GCMALLOC_CONCURRENCY_H
