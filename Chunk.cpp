@@ -26,8 +26,8 @@ void *Chunk::chunk2mem() const {
     return (void *) (this_chunk() + 2 * SIZE_SZ);
 }
 
-bool Chunk::is_aligned() {
-    return true;
+bool Chunk::is_aligned() const {
+    return ((unsigned  long)this_chunk() & GCMALLOC_ALIGN_MASK ) == 0;
 }
 
 bool Chunk::prev_inuse() const {

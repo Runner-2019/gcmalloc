@@ -90,26 +90,21 @@ private:
     void munmap_chunk(mChunkPtr p);
 
 
-#ifdef GCMALLOC_DEBUG
-    /* for unit test*/
 private:
     /* Debugging support */
-    void check_chunk(mArenaPtr ap, mChunkPtr cp);
+    void check_chunk(mArenaPtr ap, mChunkPtr cp) const;
     void check_free_chunk(mArenaPtr ap, mChunkPtr cp);
     void check_inuse_chunk(mArenaPtr ap, mChunkPtr cp);
     void check_remalloced_chunk(mArenaPtr ap, mChunkPtr cp, size_t sz);
     void check_malloced_chunk(mArenaPtr ap, mChunkPtr cp, size_t sz);
     void check_malloc_state(mArenaPtr ap);
 
-    static int perturb_byte;
     void alloc_perturb(void *p, size_t n);
     void free_perturb(void *p, size_t n);
 
-#endif
-
 
 private:
-    static mArenaPtr arena_for_chunk(mChunkPtr cp);
+    mArenaPtr arena_for_chunk(mChunkPtr cp);
     void *_int_malloc(mArenaPtr ap, size_t sz);
     void _int_free(mArenaPtr ap, void *mem);
     void malloc_consolidate(mArenaPtr ap);
@@ -120,6 +115,7 @@ private:
     Arena _main_arena;
     Tsd arena_key;
     Mutex list_lock;
+    int perturb_byte;
 
 private:
     mallocFuncType malloc_hook; // the real malloc version we used now

@@ -93,7 +93,7 @@ public:
     /* conversion from malloc headers to user pointers, and back */
     [[nodiscard]] void *chunk2mem() const;
 
-    bool is_aligned();
+    [[nodiscard]] bool is_aligned() const;
     mHeapPtr belonged_heap();
     void unlink(mChunkPtr bck, mChunkPtr fwd);
 

@@ -15,6 +15,9 @@ void Arena::set_non_contiguous() {
     flags |= NON_CONTIGUOUS_BIT;
 }
 
+void Arena::set_contiguous() {
+    flags &= ~NON_CONTIGUOUS_BIT;
+}
 
 bool Arena::have_fast_chunks() const{
     return (flags & HAVE_FAST_CHUNKS_BIT) == 0;
@@ -36,9 +39,7 @@ bool Arena::non_contiguous() const{
     return !contiguous();
 }
 
-void Arena::set_contiguous() {
-    flags &= ~NON_CONTIGUOUS_BIT;
-}
+
 
 /* unsorted chunk ops */
 mChunkPtr Arena::initial_top() {
@@ -63,11 +64,16 @@ void Arena::init(bool is_main_arena) {
 
     if (!is_main_arena)
         set_non_contiguous();
+    else
+        set_contiguous();
 
     /* only in there wo set the have fast chunks bit */
     flags |= HAVE_FAST_CHUNKS_BIT;
 
     top_chunk =  initial_top();
+//    top_chunk->set_head(0);
+    init_this_arena_lock();
+
 }
 
 
