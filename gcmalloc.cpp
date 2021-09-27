@@ -951,6 +951,11 @@ void *gcmalloc::malloc(size_t bytes) {
         }
     } else
         ar_ptr->unlock_this_arena();
+
+    /* add to used bin*/
+    if(victim)
+        used_bin.insert(offset2Chunk(victim, -2 * SIZE_SZ));
+
     assert(!victim || (mem2Chunk(victim)->is_mmapped()) ||
            ar_ptr == arena_for_chunk(mem2Chunk(victim)));
     return victim;
@@ -1744,6 +1749,30 @@ void gcmalloc::malloc_printerr(int action, const char *str, void *ptr) {
     if (!ptr)
         printf("%p", ptr);
     abort();
+}
+
+/*
+     * Scan a region of memory and mark any items in the used list appropriately.
+     * Both arguments should be GCMALLOC_ALGIMENT aligned.
+     * We will scan the BSS, the used chunks and the stack.
+*/
+
+void gcmalloc::scan_region(uintptr_t beg, uintptr_t end) {
+    uintptr_t p = beg;  /* travel beg to end */
+    mChunkPtr cp;       /* travel used_bin */
+
+    while (p <= end) {
+        cp = used_bin.head()->get_next_allocated();
+        while (cp != used_bin.tail()) {
+            /* Could be traced */
+            if ((char *) p >= (char*)cp->chunk2mem() && (char *) p < (char *) (cp->nxt_chunk())) {
+                cp->set_marked();
+                break;
+            }
+            cp = cp->get_next_allocated();
+        }
+        ++p;
+    }
 }
 
 

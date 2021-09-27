@@ -27,6 +27,7 @@ class Bins;
 class FastBins;
 class BinMap;
 class Arena;
+struct gcmallocPar;
 using mChunkPtr = Chunk *;
 using mHeapPtr = Heap *;
 using mBinPtr = mChunkPtr;
@@ -88,6 +89,10 @@ public:
     bool inuse();
     void set_inuse();
     void clear_inuse();
+
+    /* gc marked */
+    void set_marked();
+    void clear_marked();
 
 public:
     /* conversion from malloc headers to user pointers, and back */

@@ -57,7 +57,6 @@ private:
     mChunkPtr last_remainder;
     Bins bins;
     BinMap binmap;
-    UsedBin used_bin;
     mArenaPtr next;
     size_t system_mem;
     size_t max_system_mem;

@@ -180,9 +180,12 @@ TEST(TST_GCMALLOC, tst_int_malloc){
 
 TEST(TST_GCMALLOC, tst_malloc){
     gcmalloc gcm;
-    gcm.malloc(20);
-    gcm.malloc(200);
-    gcm.malloc(2000);
+    auto p = (char*)gcm.malloc(20);
+    /* test malloc and used_bin */
+    auto chunk = gcm.used_bin.head()->get_next_allocated();
+    EXPECT_EQ((char*)chunk->chunk2mem(),(char*)p);
+    EXPECT_EQ((char*)&(*p), (char*)p);
+
 
 }
 
@@ -197,6 +200,27 @@ TEST(TST_GCMALLOC, tst_malloc_and_free){
     auto p3 = gc.malloc(2000);
     gc.free(p3);
 }
+
+TEST(TST_GCMALLOC, tst_scan_region){
+    gcmalloc gc;
+    auto ret = (char*)gc.malloc(100);
+    auto chunk = offset2Chunk(ret, - 2 * SIZE_SZ);
+    ASSERT_TRUE(chunk->inuse());
+    ASSERT_FALSE(chunk->is_marked());
+
+    /* analogue reference */
+    auto p = ret + 10;
+    gc.scan_region((uintptr_t)p,(uintptr_t)p);
+    ASSERT_TRUE(chunk->inuse());
+    ASSERT_TRUE(chunk->is_marked());
+
+
+
+}
+
+
+
+
 
 
 int main(int argc, char **argv) {

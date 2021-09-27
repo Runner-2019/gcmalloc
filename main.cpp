@@ -9,11 +9,13 @@
   --------------------------------------
 */
 #include <iostream>
-//#include "gcmalloc.h"
+#include "include/gcmalloc.h"
 using namespace std;
 
 int main(){
-//    gcmalloc gc;
-    cout<<sizeof(bool)<<endl;
+    gcmalloc gc;
+    auto p = gc.malloc(10);
+    gc.free(p);
+
     return 0;
 }

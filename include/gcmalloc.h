@@ -12,6 +12,7 @@
 #define GCMALLOC_GCMALLOC_H
 #include "Arena.h"
 #include "concurrency.h"
+#include "gcmallocPar.h"
 #include <functional>
 #include <fcntl.h>
 #include <unistd.h>
@@ -26,46 +27,11 @@ using mallocFuncType = std::function<void *(size_t sz)>;
 using freeFuncType = std::function<void(void *)>;
 
 
-struct gcmallocPar {
-    /* for fast visit these fields, we use 'public'. Is friend class better ? */
-    /* Tunable parameters */
-    unsigned long trim_threshold;
-    size_t mmap_threshold;
-    size_t top_pad;
-
-    /* Memory map  support */
-    int n_mmaps;
-    int n_mmaps_max;
-    int max_n_mmaps;
-
-    /*
-        the mmap_threshold is dynamic, until the user sets
-        it manually, at which point we need to disable any
-        dynamic behavior.
-    */
-    int no_dyn_threshold;
-
-    /* Cache malloc_getpagesize */
-    unsigned int pagesize;
-
-    /* Statistics */
-    size_t mmapped_mem;
-    size_t max_mmapped_mem;
-
-    /* First address handed out by sbrk.  */
-    char *sbrk_base;
-};
-
-
-class TST_GCMALLOC;
-
 class gcmalloc {
-
 public:
     void *malloc(size_t bytes);
     void free(void *mem);
     gcmalloc();
-
 
 private:
     /* arena ops */
@@ -89,7 +55,6 @@ private:
     int trim_to_sys(size_t pad, mArenaPtr ap);
     void munmap_chunk(mChunkPtr p);
 
-
 private:
     /* Debugging support */
     void check_chunk(mArenaPtr ap, mChunkPtr cp) const;
@@ -102,7 +67,6 @@ private:
     void alloc_perturb(void *p, size_t n);
     void free_perturb(void *p, size_t n);
 
-
 private:
     mArenaPtr arena_for_chunk(mChunkPtr cp);
     void *_int_malloc(mArenaPtr ap, size_t sz);
@@ -111,11 +75,24 @@ private:
     void malloc_printerr(int action, const char *str, void *ptr);
 
 private:
+    void gc_init();
+    void collect();
+    void mark();
+    void sweep();
+    void scan_region(uintptr_t beg, uintptr_t end);
+    void scan_heap();
+    void scan_data_segment();
+    void scan_stack();
+
+
+private:
     gcmallocPar gcmp;
     Arena _main_arena;
     Tsd arena_key;
     Mutex list_lock;
     int perturb_byte;
+    UsedBin used_bin;
+
 
 private:
     mallocFuncType malloc_hook; // the real malloc version we used now
@@ -123,5 +100,6 @@ private:
     freeFuncType free_hook;
     freeFuncType save_free_hook;
 };
+
 
 #endif //GCMALLOC_GCMALLOC_H

@@ -27,7 +27,7 @@ void *Chunk::chunk2mem() const {
 }
 
 bool Chunk::is_aligned() const {
-    return ((unsigned  long)this_chunk() & GCMALLOC_ALIGN_MASK ) == 0;
+    return ((unsigned long) this_chunk() & GCMALLOC_ALIGN_MASK) == 0;
 }
 
 bool Chunk::prev_inuse() const {
@@ -78,6 +78,15 @@ size_t Chunk::get_size_field() const {
 
 size_t Chunk::get_prev_size_field() const {
     return prev_size;
+}
+
+
+void Chunk::set_marked() {
+    size |= GC_MARKED;
+}
+
+void Chunk::clear_marked() {
+    size = size & ~GC_MARKED;
 }
 
 /* This chunk's inuse information is stored in next chunk */
@@ -149,6 +158,9 @@ void Chunk::set_prev_allocated(mChunkPtr p) {
 mChunkPtr Chunk::get_prev_allocated() const {
     return (mChunkPtr) (*(unsigned long *) ((char *) (chunk2mem()) + get_valid_size() + SIZE_SZ));
 }
+
+
+
 
 
 
