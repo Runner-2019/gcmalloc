@@ -4,7 +4,8 @@
 - Use two buffer to speed up
 - main_arena and non_main_arena support
 - thread safe 
-- garbage collection version
+- root tracing to mark garbage
+- mark & sweep to recycle garbage
 
 ## install
 - first: download this rep
