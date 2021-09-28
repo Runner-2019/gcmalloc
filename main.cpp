@@ -15,7 +15,8 @@ using namespace std;
 int main(){
     gcmalloc gc;
     auto p = gc.malloc(10);
-    gc.free(p);
+    auto p1 = gc.malloc(100);
+    auto p2 = gc.malloc(1000);
 
     return 0;
 }

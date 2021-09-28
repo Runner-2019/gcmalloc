@@ -30,7 +30,8 @@ using freeFuncType = std::function<void(void *)>;
 class gcmalloc {
 public:
     void *malloc(size_t bytes);
-    void free(void *mem);
+    void collect();
+
     gcmalloc();
 
 private:
@@ -69,20 +70,20 @@ private:
 
 private:
     mArenaPtr arena_for_chunk(mChunkPtr cp);
+    void free(void *mem);
     void *_int_malloc(mArenaPtr ap, size_t sz);
     void _int_free(mArenaPtr ap, void *mem);
     void malloc_consolidate(mArenaPtr ap);
     void malloc_printerr(int action, const char *str, void *ptr);
 
 private:
-    void gc_init();
-    void collect();
     void mark();
     void sweep();
     void scan_region(uintptr_t beg, uintptr_t end);
     void scan_heap();
-    void scan_data_segment();
-    void scan_stack();
+//    void gc_init();
+//    void scan_data_segment();
+//    void scan_stack();
 
 
 private:

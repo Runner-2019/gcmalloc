@@ -925,6 +925,9 @@ void *gcmalloc::malloc(size_t bytes) {
     mArenaPtr ar_ptr;
     void *victim;
 
+    /* this isn't a effective way, but I have no tolerance to do more*/
+    collect();
+
     mallocFuncType hook = malloc_hook;
     if (hook != nullptr)
         return (hook)(bytes);
@@ -1773,6 +1776,49 @@ void gcmalloc::scan_region(uintptr_t beg, uintptr_t end) {
         }
         ++p;
     }
+}
+
+/*
+    WARNNING: there is a bug.
+    We must supposed to the memory is contiguous now.
+    This should be improved in the future.
+    Scan the marked blocks for references to other unmarked blocks.
+
+ */
+void gcmalloc::scan_heap() {
+    uintptr_t hp;
+    mChunkPtr cp, p;
+
+    /* O(n^3) */
+    /* maintain a BST could be better */
+    for (cp = used_bin.head()->get_next_allocated(); cp != used_bin.tail(); cp = cp->get_next_allocated()) {
+        for (p = cp->get_next_allocated(); p != used_bin.tail(); p = p->get_next_allocated()) {
+            scan_region((uintptr_t)cp->chunk2mem(),(uintptr_t)(cp->this_chunk() + cp->get_valid_size()));
+        }
+    }
+}
+
+void gcmalloc::mark() {
+    scan_heap();
+}
+
+void gcmalloc::sweep() {
+    mChunkPtr pre = used_bin.head();
+    mChunkPtr p = pre->get_next_allocated();
+
+    for ( ; p && p != used_bin.tail(); pre = p, p = p->get_next_allocated()) {
+        /* The chunk hasn't been marked. Thus, it must be set free. */
+        if (!p->is_marked()) {
+            used_bin.remove(p);
+            free(p->chunk2mem());
+        }
+    }
+
+}
+
+void gcmalloc::collect() {
+    mark();
+    sweep();
 }
 
 
